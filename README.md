@@ -50,9 +50,80 @@ Switch between 11 discreet lighting profiles with a smooth fading notification:
 * **Optimized Rendering**: Uses `pygame.SRCALPHA` for transparency in lighting, slime trails, and fin rendering.
 * **Sand Logic**: Tethered sand dunes calculated using `math.sin` and `math.cos`.
 
+## 🛠️ Developer Guide: Adding New Fish
+Expanding the ecosystem is designed to be modular. You can add a new species by extending existing classes and registering the fish in the spawning logic.
+
+1. Choose a Base Class
+Fish: The standard base class. Use this for mid-water swimmers (like Tetras or Gouramis).
+
+Cichlid: A specialized subclass of Fish. Use this if your new fish should exhibit territorial behavior, patrol specific areas, or sift sand.
+
+2. Create the New Fish Class
+Inherit from your chosen base and override the behavior and draw methods.
+
+```python
+class MyNewFish(Fish):  # Or extends Cichlid
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.max_speed = 2.5
+        # Custom attributes (e.g., specific colors or school ID)
+
+    def behavior(self, fishes):
+        # Define AI logic here (e.g., schooling, avoiding predators)
+        # Use self.apply_force(pygame.Vector2) to move
+        pass
+
+    def draw(self, surface):
+        self.draw_shadow(surface, 20) # Draw a shadow on the sand
+        # Use pygame.draw or surface.blit to render the fish
+        # Use self.get_depth_color(color) to adjust for Z-depth shading
+```
+3. Update the Spawn Logic
+To make your fish appear in the aquarium, add it to the spawn_random_fish function (or the initialization loop) in main.py.
+
+```python
+#ADD NEW FISH IN THIS LIST WITH CHANCE TO SPAWN RATE
+spawn_table = [
+        (0.15, TigerBarb, surface_zone),
+        (0.25, PearlGourami, surface_zone + 40),
+
+        (0.35, Pleco, floor_y),
+        (0.45, NeonTetra, mid_zone),
+        (0.55, BoesemaniRainbow, mid_zone - 50),
+        (0.60, BalaShark, mid_zone),
+
+        (0.70, ClownLoach, floor_y - 20),
+        (0.80, PeacockCichlid, bottom_y),
+        (0.88, YellowPrinceCichlid, bottom_y),
+        (0.96, IceBlueCichlid, bottom_y),
+        (1.00, Cichlid, bottom_y)
+    ]
+```
 ## 📂 Asset Requirements
 The simulator looks for assets in the `/doodads` folder:
 * `pebble.png` and `rock.png`
 * `splash.png`
 * Music files (`bgmusic.mp3` to `bgmusic4.mp3`)
 * Wall art files (`wallart.png` to `wallart9.png`)
+
+## 🚀 Installation
+Follow these steps to get the simulator running on your local machine:
+
+Clone the Repository:
+
+```Bash
+git clone https://github.com/mcflj0911/pixel_aquarium.git
+cd pixel_aquarium
+```
+
+Install Dependencies:
+The project requires Python 3.x and the pygame-ce (Community Edition) library:
+```Bash
+python -m pip install pygame-ce
+```
+
+Run the Simulator:
+
+```Bash
+python main.py
+```
