@@ -1,5 +1,7 @@
 # 🐠 Advanced Aquarium Simulator
 
+![image](https://github.com/mcflj0911/pixel_aquarium/blob/main/doodads/splash.png)
+
 A high-fidelity, interactive aquarium ecosystem built with Python and **Pygame-CE**. This project features complex fish AI, dynamic lighting systems, and a procedurally generated underwater environment.
 
 ## 🌟 Key Features
