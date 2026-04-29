@@ -783,17 +783,358 @@ class BoesemaniRainbow(Fish):
         pygame.draw.circle(surface, (10, 10, 30), (int(eye_x), int(y + 4 * z)), int(2 * z))
         pygame.draw.circle(surface, (255, 255, 255), (int(eye_x + 1 * facing), int(y + 3 * z)), 1)
 
-def spawn_random_fish():
+
+class PeacockCichlid(Cichlid):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.max_speed = 2.0
+        self.state = "HOVER"  # Special hunting state
+        self.hunt_timer = 0
+        self.color_shift = random.uniform(0, 30)  # Individual color variation
+
+    def behavior(self, fishes):
+        # 1. State Machine
+        if self.state == "HOVER":
+            # Motionless hunting: Cichlids "listen" for invertebrates in the sand
+            self.vel *= 0.8
+            self.hunt_timer += 1
+            if self.hunt_timer > 100:
+                self.state = "PATROL"
+                self.hunt_timer = 0
+
+        elif self.state == "PATROL":
+            # Standard movement, staying near the bottom
+            if random.random() < 0.01:
+                self.state = "HOVER"
+            super().behavior(fishes)  # Inherit territorial behavior from Cichlid
+
+    def draw(self, surface):
+        self.draw_shadow(surface, 28)
+        facing = 1 if self.vel.x >= 0 else -1
+        x, y, z = self.pos.x, self.pos.y, self.z
+
+        # Colors
+        electric_blue = self.get_depth_color((40, 110, 255))
+        fin_red = self.get_depth_color((200, 50, 40))
+        egg_spot_gold = (255, 200, 50)
+        bar_color = (20, 40, 100, 80)  # Subtle dark vertical bars
+        shimmer_top = (180, 230, 255, 70)
+
+        # 1. Create Body Surface
+        fish_surf = pygame.Surface((int(42 * z), int(32 * z)), pygame.SRCALPHA)
+        x_off = 5 * z
+
+        # Refined Body Points
+        body_rel_pts = [
+            (35 * z + x_off, 12 * z),  # Nose
+            (25 * z + x_off, 4 * z),  # High forehead
+            (10 * z + x_off, 6 * z),  # Back
+            (0 * z + x_off, 12 * z),  # Tail Base Top
+            (0 * z + x_off, 20 * z),  # Tail Base Bot
+            (15 * z + x_off, 28 * z)  # Deep Belly
+        ]
+
+        # 2. Draw Layered Body Colors
+        pygame.draw.polygon(fish_surf, electric_blue, body_rel_pts)
+
+        # Red "Shoulder" Glow (Blended into the blue)
+        pygame.draw.ellipse(fish_surf, fin_red, (20 * z + x_off, 8 * z, 12 * z, 14 * z))
+
+        # 3. Vertical Barring & Body Specks (Deterministic)
+        random.seed(hash(self) % 1000)
+        # Vertical bars common in Malawi Cichlids
+        for i in range(6):
+            bx = (6 + i * 4) * z + x_off
+            pygame.draw.line(fish_surf, bar_color, (bx, 8 * z), (bx, 22 * z), int(2 * z))
+
+        # Metallic "Scales" Specks
+        for _ in range(int(20 * z)):
+            sx = random.uniform(5 * z, 30 * z) + x_off
+            sy = random.uniform(8 * z, 24 * z)
+            if fish_surf.get_at((int(sx), int(sy))).a > 0:
+                pygame.draw.circle(fish_surf, shimmer_top, (int(sx), int(sy)), 1)
+        random.seed()
+
+        # 4. Flip and Blit Body
+        if facing == -1:
+            fish_surf = pygame.transform.flip(fish_surf, True, False)
+
+        render_x = x - ((35 * z + x_off) if facing == 1 else (2 * z))
+        surface.blit(fish_surf, (render_x, y - 12 * z))
+
+        # 5. Fins with Egg Spots
+        f_sway = math.sin(pygame.time.get_ticks() * 0.01) * 3 * z
+
+        # Dorsal Fin (Electric blue/white edge)
+        d_pts = [(x - 28 * z * facing, y - 5 * z), (x - 12 * z * facing, y - 14 * z + f_sway),
+                 (x - 4 * z * facing, y - 2 * z)]
+        pygame.draw.polygon(surface, electric_blue, d_pts)
+        pygame.draw.lines(surface, (200, 240, 255), False, d_pts[:2], 2)  # Glowing edge
+
+        # Anal Fin (Red/Orange with Yellow Egg Spots)
+        a_pts = [(x - 26 * z * facing, y + 16 * z + f_sway), (x - 10 * z * facing, y + 14 * z),
+                 (x - 24 * z * facing, y + 8 * z)]
+        pygame.draw.polygon(surface, fin_red, a_pts)
+
+        # Add the Egg Spots (Signature Peacock Cichlid feature)
+        for i in range(3):
+            spot_x = x - (16 + i * 4) * z * facing
+            spot_y = y + 12 * z + f_sway
+            pygame.draw.circle(surface, egg_spot_gold, (int(spot_x), int(spot_y)), int(1.2 * z))
+
+        # 6. Tail Fin
+        t_sway = math.sin(pygame.time.get_ticks() * 0.012) * 5 * z
+        tail_tip_x = x - 46 * z * facing
+        t_pts = [(x - 28 * z * facing, y), (tail_tip_x, y - 6 * z + t_sway), (tail_tip_x, y + 16 * z + t_sway),
+                 (x - 28 * z * facing, y + 8 * z)]
+        pygame.draw.polygon(surface, electric_blue, t_pts)
+
+        # 7. Eye
+        eye_x, eye_y = x - 6 * z * facing, y + 3 * z
+        pygame.draw.circle(surface, (10, 10, 10), (int(eye_x), int(eye_y)), int(2.5 * z))
+        pygame.draw.circle(surface, (255, 200, 0), (int(eye_x), int(eye_y)), int(2.5 * z), 1)  # Gold iris
+
+
+class SocialFlowerhorn(Fish):
+    population = 0
+
+    def __init__(self, x, y):
+        SocialFlowerhorn.population += 1
+        self.target_friend = None
+        super().__init__(x, y)
+        self.z = random.uniform(0.1, 0.5)
+
+        self.max_speed = 2.2
+        self.state = "IDLE"
+        self.angle = 0.0
+        self.lerp_speed = 0.1
+        self.wiggle_energy = 0.0
+
+        # --- NEW STATS ---
+        self.aggression = random.uniform(0.3, 1.0)
+        self.energy = random.uniform(0.5, 1.0)
+        self.burst_timer = 0
+
+        # --- GENETICS (reduced hump) ---
+        self.kok_scale = random.uniform(0.6, 1.0)
+
+        r = random.randint(200, 255)
+        g = random.randint(20, 80)
+        b = random.randint(40, 100)
+        self.base_color = (r, g, b)
+
+        self.pearl_count = random.randint(25, 60)
+        self.seed = random.random()
+
+    # ---------------- BEHAVIOR ----------------
+    def behavior(self, fishes):
+        mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
+        dist_to_mouse = self.pos.distance_to(mouse_pos)
+
+        self.burst_timer -= 1
+
+        if dist_to_mouse < 300:
+            self.state = "INTERACT"
+            desired = (mouse_pos - self.pos).normalize()
+            self.apply_force(desired * 0.12)
+
+            self.wiggle_energy = min(1.0, self.wiggle_energy + 0.06)
+
+            if self.burst_timer <= 0 and random.random() < 0.02:
+                self.vel += desired * 2.5
+                self.burst_timer = random.randint(40, 100)
+
+        else:
+            self.state = "SOCIALIZE"
+            self.wiggle_energy *= 0.94
+
+            if not self.target_friend or random.random() < 0.01:
+                others = [f for f in fishes if f != self]
+                if others:
+                    self.target_friend = random.choice(others)
+
+            if self.target_friend:
+                offset = self.target_friend.pos - self.pos
+                dist = offset.length()
+
+                if dist > 120:
+                    self.apply_force(offset.normalize() * 0.035)
+                elif dist < 60:
+                    self.apply_force(-offset.normalize() * 0.04)
+
+        # Separation
+        for f in fishes:
+            if f != self:
+                d = self.pos.distance_to(f.pos)
+                if 0 < d < 40:
+                    self.apply_force((self.pos - f.pos).normalize() * 0.05)
+
+        # Angle
+        if self.vel.length() > 0.1:
+            target_angle = math.degrees(math.atan2(-self.vel.y, abs(self.vel.x)))
+            self.angle += (target_angle - self.angle) * self.lerp_speed
+
+    # ---------------- DRAW ----------------
+    def draw(self, surface):
+        self.draw_shadow(surface, 60)
+        z = self.z
+
+        # Dynamic canvas sizing
+        surf_w, surf_h = int(280 * z), int(280 * z)
+        fish_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+        cx, cy = surf_w // 2, surf_h // 2
+
+        # Physics-based animation timing
+        t = pygame.time.get_ticks() * (0.004 + self.wiggle_energy * 0.01)
+        tail_move = math.sin(t) * (12 * z + self.wiggle_energy * 10)
+        fin_wave = math.cos(t * 0.8) * 6 * z
+
+        # ---------------------------------------------------------
+        # 🎨 DYNAMIC PALETTE
+        # ---------------------------------------------------------
+        shimmer = int(15 * math.sin(t * 1.5))
+        base_rgb = list(self.base_color)
+
+        # Pearl/Scale highlight color
+        pearl_color = (
+            min(255, base_rgb[0] + 100),
+            min(255, base_rgb[1] + 100),
+            min(255, base_rgb[2] + 100),
+            150
+        )
+
+        # ---------------------------------------------------------
+        # 🐟 FINS (Drawn First for Layering)
+        # ---------------------------------------------------------
+        def draw_organic_fin(points, color, alpha=100, wavy=True):
+            f_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+            # Main membrane
+            pygame.draw.polygon(f_surf, (*color[:3], alpha), points)
+            # Fin Rays (the "bones")
+            root = points[0]
+            for p in points[1:]:
+                pygame.draw.line(f_surf, (*pearl_color[:3], 40), root, p, max(1, int(2 * z)))
+
+            # Soften edges
+            pygame.draw.aalines(f_surf, (*color[:3], 180), False, points)
+            fish_surf.blit(f_surf, (0, 0))
+
+        # Pectoral/Dorsal Fins
+        draw_organic_fin([
+            (cx - 20 * z, cy - 30 * z),
+            (cx - 60 * z, cy - 90 * z + fin_wave),
+            (cx - 120 * z, cy - 70 * z + tail_move),
+            (cx - 70 * z, cy - 10 * z)
+        ], self.base_color, 120)
+
+        # Anal Fin
+        draw_organic_fin([
+            (cx - 20 * z, cy + 30 * z),
+            (cx - 60 * z, cy + 90 * z - fin_wave),
+            (cx - 120 * z, cy + 70 * z + tail_move),
+            (cx - 70 * z, cy + 10 * z)
+        ], self.base_color, 120)
+
+        # ---------------------------------------------------------
+        # 🐟 BODY CONSTRUCTION
+        # ---------------------------------------------------------
+        body_mask = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+
+        # Define body parts as a unified shape
+        parts = [
+            ((cx - 10 * z, cy), (140 * z, 105 * z)),  # Main Midsection
+            ((cx + 40 * z, cy), (90 * z, 95 * z)),  # Head/Chest
+            ((cx - 60 * z, cy + 5 * z), (110 * z, 75 * z))  # Rear Taper
+        ]
+
+        for pos, size in parts:
+            rect = pygame.Rect(0, 0, size[0], size[1])
+            rect.center = pos
+            pygame.draw.ellipse(body_mask, (255, 255, 255), rect)
+
+        # Apply a "Spherical" lighting effect rather than a flat line gradient
+        render_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+        render_surf.fill(self.get_depth_color(self.base_color))
+
+        # Highlight (Top/Shoulder)
+        highlight_rect = pygame.Rect(cx - 50 * z, cy - 60 * z, 130 * z, 60 * z)
+        pygame.draw.ellipse(render_surf, pearl_color, highlight_rect)
+
+        # Belly (Bottom Glow)
+        belly_rect = pygame.Rect(cx - 40 * z, cy + 10 * z, 100 * z, 50 * z)
+        pygame.draw.ellipse(render_surf, (255, 255, 255, 80), belly_rect)
+
+        # Mask everything to the body shape
+        render_surf.blit(body_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        fish_surf.blit(render_surf, (0, 0))
+
+        # ---------------------------------------------------------
+        # 🌸 THE "FLOWER" MARKINGS (Flowerhorn Signature)
+        # ---------------------------------------------------------
+        for i in range(5):
+            spot_x = cx - 60 * z + (i * 25 * z)
+            spot_y = cy + math.sin(t + i) * 2 * z
+            spot_size = (12 * z - i * z)
+            # Black irregular spots
+            pygame.draw.circle(fish_surf, (20, 20, 20, 200), (int(spot_x), int(spot_y)), int(spot_size))
+            # Silver halo around spots
+            pygame.draw.circle(fish_surf, (255, 255, 255, 100), (int(spot_x), int(spot_y)), int(spot_size + 2 * z), 1)
+
+        # ---------------------------------------------------------
+        # 🧠 KOK (The Nuchal Hump)
+        # ---------------------------------------------------------
+        k_size = (70 * z * self.kok_scale, 60 * z * self.kok_scale)
+        kok_rect = pygame.Rect(0, 0, k_size[0], k_size[1])
+        kok_rect.center = (cx + 55 * z, cy - 45 * z)
+
+        # Gradient for the Hump
+        pygame.draw.ellipse(fish_surf, (230, 50, 50), kok_rect)
+        # Vein-like highlights on the hump
+        pygame.draw.ellipse(fish_surf, (255, 100, 100, 150), kok_rect.inflate(-10 * z, -15 * z))
+
+        # ---------------------------------------------------------
+        # 👁️ REALISTIC EYE
+        # ---------------------------------------------------------
+        ex, ey = int(cx + 80 * z), int(cy - 5 * z)
+        pygame.draw.circle(fish_surf, (50, 0, 0), (ex, ey), int(10 * z))  # Socket
+        pygame.draw.circle(fish_surf, (255, 50, 0), (ex, ey), int(8 * z))  # Iris
+        pygame.draw.circle(fish_surf, (0, 0, 0), (ex, ey), int(5 * z))  # Pupil
+        pygame.draw.circle(fish_surf, (255, 255, 255, 200), (ex + 3, ey - 3), int(2 * z))  # Glint
+
+        # ---------------------------------------------------------
+        # 🎬 TAIL (Trailing Layer)
+        # ---------------------------------------------------------
+        draw_organic_fin([
+            (cx - 90 * z, cy),
+            (cx - 180 * z, cy - 80 * z + tail_move),
+            (cx - 210 * z, cy + tail_move * 0.5),
+            (cx - 180 * z, cy + 80 * z + tail_move),
+            (cx - 90 * z, cy + 20 * z)
+        ], self.base_color, 150)
+
+        # Final transform and blit
+        facing_right = self.vel.x >= 0
+        final = pygame.transform.flip(fish_surf, True, False) if not facing_right else fish_surf
+        rotated = pygame.transform.rotate(final, self.angle if facing_right else -self.angle)
+        surface.blit(rotated, rotated.get_rect(center=(self.pos.x, self.pos.y)))
+
+def spawn_random_fish(fishes=[]):
     choice = random.random()
     spawn_x = random.randint(50, SCREEN_WIDTH - 50)
-    if choice < 0.4:        # 40% Neons
-        return NeonTetra(spawn_x, 300)
-    elif choice < 0.65:     # 25% Rainbowfish (Social & Curious)
-        return BoesemaniRainbow(spawn_x, 200)
-    elif choice < 0.85:     # 20% Cichlids
-        return Cichlid(spawn_x, 500)
-    else:                   # 15% Gouramis
-        return PearlGourami(spawn_x, 100)
+
+    if choice < 0.05:
+            return SocialFlowerhorn(spawn_x, random.randint(200, 400))
+    # 3. Standard spawning for the rest
+    elif choice < 0.35:  # 30% Neons
+        return NeonTetra(spawn_x, random.randint(250, 450))
+    elif choice < 0.55:  # 20% Rainbowfish
+        return BoesemaniRainbow(spawn_x, random.randint(150, 300))
+    elif choice < 0.70:  # 15% Standard Cichlids
+        return Cichlid(spawn_x, SCREEN_HEIGHT - 150)
+    elif choice < 0.85:  # 15% Peacock Cichlids
+        return PeacockCichlid(spawn_x, SCREEN_HEIGHT - 160)
+    else:  # 15% Pearl Gouramis
+        return PearlGourami(spawn_x, 120)
 
 
 # --- Main ---
@@ -848,7 +1189,11 @@ except pygame.error:
 # 2. Background Wallpaper
 try:
     # Use get_path to look inside the folder
-    bg_image = pygame.image.load(get_path('wallart.png')).convert()
+    bg_files = ["wallart.png", "wallart2.png", "wallart3.png", "wallart4.png"]
+    bg_index = 0
+    # Load the initial background
+    bg_image = pygame.image.load(get_path(bg_files[bg_index]))
+    # Ensure it fits your screen size
     bg_image = pygame.transform.scale(bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 except pygame.error:
     print("Warning: wallart.png not found in 'doodads'. Using solid color.")
@@ -930,17 +1275,32 @@ while True:
 
 
         # 2. Layers (Fish/Plants)
+        for f in fishes[:]:
+            # Update behavior for ALL fish types including the Gar
+            f.behavior(fishes)
+            f.update(pellets, algae)
+
+            # Handling death/eating and immediate respawn
+            if not f.alive:
+                fishes.remove(f)
+                fishes.append(spawn_random_fish(fishes))
+
+            # --- 2. MODIFIED DRAWING LOOP ---
+            # Sort by depth so small fish stay in back and large in front
         sorted_fishes = sorted(fishes, key=lambda f: f.z)
+
         for f in sorted_fishes:
             if f.z <= 0.9:
-                if isinstance(f, (NeonTetra, Cichlid, PearlGourami)): f.behavior(fishes)
-                f.update(pellets, algae)
+                # Remove the behavior/update calls from here since
+                # we moved them to the loop above!
                 f.draw(screen)
-        for p in plants: p.draw(screen, frame)
+
+        for p in plants:
+            p.draw(screen, frame)
+
         for f in sorted_fishes:
             if f.z > 0.9:
-                if isinstance(f, (NeonTetra, Cichlid, PearlGourami)): f.behavior(fishes)
-                f.update(pellets, algae)
+                # Just draw here
                 f.draw(screen)
 
         # 3. Caustics
@@ -961,6 +1321,17 @@ while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT: pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_b:  # Toggle with 'B' key
+                    # Increment and wrap around using modulo
+                    bg_index = (bg_index + 1) % len(bg_files)
+
+                    # Load the new image
+                    try:
+                        new_bg = pygame.image.load(get_path(bg_files[bg_index]))
+                        bg_image = pygame.transform.scale(new_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
+                        print(f"Switched to {bg_files[bg_index]}")
+                    except pygame.error as e:
+                        print(f"Could not load {bg_files[bg_index]}: {e}")
                 if event.key == pygame.K_r:
                     # Return to welcome screen
                     current_state = STATE_WELCOME
