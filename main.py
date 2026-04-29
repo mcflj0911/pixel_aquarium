@@ -3,10 +3,11 @@ import random
 import math
 import sys
 import os
-
+pygame.init()
+info = pygame.display.Info()
 ASSET_PATH = "doodads"
-SCREEN_WIDTH = 1400
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = info.current_w - 300
+SCREEN_HEIGHT = 600
 SAND_HEIGHT = 40
 WATER_TOP = 80
 ALGAE_SPAWN_RATE = 20
@@ -36,6 +37,8 @@ LIGHT_MODES = [
     {"name": "RGB STROBE",    "color": (0, 0, 0, 0)}           # Party mode
 ]
 current_light_idx = 0
+light_notif_text = ""
+light_notif_alpha = 0
 
 def get_path(filename):
     return os.path.join(ASSET_PATH, filename)
@@ -284,6 +287,54 @@ class Plant:
                         pygame.draw.circle(surface, (min(255, r + 30), g, b), (int(lx), int(ly)), 1)
                 pygame.draw.circle(surface, stem_col, (int(px), int(py)), 2)
 
+            elif self.species == "TigerLotus":
+                # 1. Colors: Deep reds and purples (The "Eye Candy")
+                # Base red pulses slightly with the frame
+                pulse = math.sin(frame * 0.05) * 15
+                r = max(0, min(255, 160 + self.tint + pulse))
+                g = max(0, min(255, 40 + self.tint // 2))
+                b = max(0, min(255, 60 + self.tint))
+
+                leaf_col = (r, g, b)
+                mottle_col = (max(0, r - 60), max(0, g - 20), max(0, b - 20))
+                stem_col = (max(0, r - 80), 30, 40)
+
+                # 2. Stem Logic
+                # Connect the segment to the previous one
+                prev_py = base_y - ((i - 1) * 12) if i > 0 else base_y
+                prev_px = self.pos_x + math.sin(frame * self.sway_speed + self.sway_offset + ((i - 1) * 0.2)) * (
+                            (i - 1) ** 1.5) * 0.8 if i > 0 else self.pos_x
+                pygame.draw.line(surface, stem_col, (px, py), (prev_px, prev_py), 2)
+
+                # 3. Leaf Rendering
+                # Every segment gets a leaf, but they get larger as they go up
+                lw, lh = (20 * (1 - taper) + 15), (12 * (1 - taper) + 8)
+
+                # Create a transparent surface for the leaf softness and mottling
+                leaf_surf = pygame.Surface((lw * 2, lh * 2), pygame.SRCALPHA)
+
+                # Draw the heart/arrowhead shape (simplified as an ellipse)
+                pygame.draw.ellipse(leaf_surf, (*leaf_col, 210), (0, 0, lw * 2, lh * 2))
+
+                # Add "Tiger" mottling (dark spots/veins)
+                for s in range(3):
+                    dot_x = random.Random(i + s).randint(int(lw * 0.5), int(lw * 1.5))
+                    dot_y = random.Random(i + s).randint(int(lh * 0.5), int(lh * 1.5))
+                    pygame.draw.circle(leaf_surf, (*mottle_col, 150), (dot_x, dot_y), int(3 * (1 - taper) + 2))
+
+                # Rotate leaf based on segment index and sway
+                rot_angle = (i * 45) + (sway * 2)
+                final_leaf = pygame.transform.rotate(leaf_surf, rot_angle)
+
+                # Blit leaf relative to the current segment point (px, py)
+                surface.blit(final_leaf, (px - final_leaf.get_width() // 2, py - final_leaf.get_height() // 2))
+
+                # 4. Centerpiece Shine
+                if i == self.segments - 1:
+                    # Add a highlight to the top-most leaf
+                    shine_rect = (px - 5, py - 5, 10, 5)
+                    pygame.draw.ellipse(surface, (255, 255, 255, 100), shine_rect)
+
             elif self.species == "Ludwigia":
                 red_val = max(0, min(255, 120 + (i * 10) + self.tint))
                 green_val = max(0, min(255, 80 + self.tint))
@@ -346,6 +397,7 @@ class Plant:
                 if i == 0:
                     pygame.draw.ellipse(surface, (40, 30, 20), (self.pos_x - 15, base_y - 5, 30, 12))
                     pygame.draw.ellipse(surface, (60, 50, 30), (self.pos_x - 12, base_y - 3, 24, 6))
+
 
 class FoodPellet:
     def __init__(self, x, y):
@@ -1130,146 +1182,154 @@ class ClownLoach(Fish):
         surface.blit(rotated, rotated.get_rect(center=(int(x), int(y))))
 
 
-class MajesticBetta(Fish):
+class Hatchetfish(Fish):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.max_speed = 1.0
-        self.flare_timer = 0
-        self.is_flaring = False
-        self.color_shift = random.uniform(0, 100)
-        self.z = random.uniform(0.2, 0.6)
+        # Hatchetfish strictly stay at the surface
+        self.z = random.uniform(0.5, 0.8)
+        self.max_speed = 1.2
+        # They target the very top of the water column
+        self.target_y = WATER_TOP + random.randint(15, 45)
+
+        # Classic Silver/Marble color
+        self.base_color = (200, 200, 210)
+        self.stripe_color = (60, 65, 75)  # Dark lateral line
+        self.eye_color = (255, 255, 255)
 
     def behavior(self, fishes):
-        m_pos = pygame.Vector2(pygame.mouse.get_pos())
-        dist = self.pos.distance_to(m_pos)
-        if dist < 250:
-            self.apply_force((m_pos - self.pos).normalize() * 0.08)
-            if dist < 120:
-                self.is_flaring = True
-                self.flare_timer = 40
-        if self.flare_timer > 0:
-            self.flare_timer -= 1
-            self.vel *= 0.85
-        else:
-            self.is_flaring = False
-            if random.random() < 0.01:
-                self.apply_force(pygame.Vector2(random.uniform(-0.5, 0.5), random.uniform(-0.5, 0.5)))
+        # 1. SURFACE TETHERING
+        # They move mostly horizontally, fighting to stay at the top
+        dy = self.target_y - self.pos.y
+        self.apply_force(pygame.Vector2(0, dy * 0.02))
+
+        # 2. DARTING (Sudden horizontal shifts)
+        if random.random() < 0.01:
+            self.apply_force(pygame.Vector2(random.uniform(-1.5, 1.5), 0))
+
+        # 3. SOCIAL SPACING
+        for o in fishes:
+            if isinstance(o, Hatchetfish) and o != self:
+                dist = self.pos.distance_to(o.pos)
+                if dist < 60:
+                    self.apply_force((self.pos - o.pos) * 0.01)
+
+        # Friction to maintain the "skimming" look
+        self.vel.x *= 0.98
+        self.vel.y *= 0.95
 
     def draw(self, surface):
-        self.draw_shadow(surface, 35)
-        facing, x, y, z = (1 if self.vel.x >= 0 else -1), self.pos.x, self.pos.y, self.z
+        self.draw_shadow(surface, 15)
+        z, x, y = self.z, self.pos.x, self.pos.y
+        facing = 1 if self.vel.x >= 0 else -1
 
-        # 1. Metallic Platinum Color Logic
-        time_ms = pygame.time.get_ticks()
-        t = time_ms * 0.002 + self.color_shift
-        # High base brightness for that "Platinum" look
-        bright = int(220 + 35 * math.sin(t))
-        # Subtle blue/cyan shift for iridescence
-        r = max(0, min(255, bright - 10))
-        g = max(0, min(255, bright))
-        b = max(0, min(255, bright + 15))
+        # Deep body surface
+        surf_w, surf_h = int(120 * z), int(120 * z)
+        fish_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+        cx, cy = surf_w // 2, surf_h // 2
 
-        base_col = self.get_depth_color((r, g, b))
-        flare_mod = 1.3 if self.is_flaring else 1.0  # Plakats have stiffer, shorter flares
-        sway = math.sin(time_ms * 0.006) * 6 * z  # Faster, tighter wiggle for short fins
+        body_col = self.get_depth_color(self.base_color)
+        t = pygame.time.get_ticks() * 0.01
 
-        # 2. Transparent Fin Rendering
-        fin_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        # 1. THE ICONIC "HATCHET" BODY
+        # A semi-circle/deep keel shape
+        body_pts = []
+        # Top line (Flat)
+        body_pts.append((cx + 40 * z, cy - 35 * z))  # Nose
+        body_pts.append((cx - 30 * z, cy - 35 * z))  # Tail base top
+        # Deep keel curve
+        for i in range(11):
+            angle = math.pi * (i / 10)
+            px = cx - 30 * z + (70 * z * (1 - i / 10))
+            py = cy - 35 * z + math.sin(angle) * 75 * z
+            body_pts.append((px, py))
 
-        def draw_plakat_fin(origin, width, height, color, alpha, upward=True, is_tail=False):
-            steps = 10
-            pts = [origin]
-            dir_y = -1 if upward else 1
+        pygame.draw.polygon(fish_surf, body_col, body_pts)
 
-            for i in range(steps + 1):
-                pct = i / steps
-                # Plakat fins are more rounded and spade-like
-                if is_tail:
-                    angle = (pct - 0.5) * math.pi * (1.6 * flare_mod)
-                    px = origin[0] - (width * math.cos(angle) * facing)
-                    py = origin[1] + (height * math.sin(angle))
-                else:
-                    px = origin[0] - (width * pct * facing)
-                    # Rounding the dorsal/anal fins
-                    py = origin[1] + (height * math.sin(pct * math.pi) * dir_y * flare_mod)
+        # 2. LATERAL LINE & MARBLING
+        # Dark line through the middle
+        pygame.draw.line(fish_surf, self.stripe_color, (cx + 35 * z, cy - 25 * z), (cx - 30 * z, cy - 25 * z),
+                         int(2 * z))
 
-                pts.append((int(px), int(py + (sway * pct * 0.5))))
+        # 3. WING-LIKE PECTORAL FINS (High on the body)
+        p_sway = math.sin(t * 0.8) * 10 * z
+        pec_pts = [
+            (cx + 15 * z, cy - 30 * z),
+            (cx - 5 * z, cy - 50 * z + p_sway),
+            (cx + 5 * z, cy - 35 * z)
+        ]
+        pygame.draw.polygon(fish_surf, (220, 220, 220, 150), pec_pts)
+        pygame.draw.aalines(fish_surf, (255, 255, 255, 180), True, pec_pts)
 
-            pts.append((int(origin[0] - (width * 0.1 * facing)), int(origin[1])))
+        # 4. SMALL FINS (Dorsal is tiny and far back)
+        # Dorsal
+        pygame.draw.polygon(fish_surf, body_col,
+                            [(cx - 15 * z, cy - 35 * z), (cx - 25 * z, cy - 45 * z), (cx - 30 * z, cy - 35 * z)])
+        # Anal (Tiny, along the back of the keel)
+        pygame.draw.polygon(fish_surf, body_col,
+                            [(cx - 10 * z, cy + 20 * z), (cx - 30 * z, cy + 10 * z), (cx - 30 * z, cy - 10 * z)])
 
-            # Platinum fins often have a white/transparent edge
-            c = (*[max(0, min(255, int(c))) for c in color], alpha)
-            pygame.draw.polygon(fin_surf, c, pts)
-            pygame.draw.aalines(fin_surf, (255, 255, 255, 200), False, pts[1:-1])
+        # 5. TAIL (Small and forked)
+        sway = math.sin(t) * 5 * z
+        tail_pts = [
+            (cx - 30 * z, cy - 25 * z),
+            (cx - 55 * z, cy - 40 * z + sway),
+            (cx - 45 * z, cy - 25 * z + sway),
+            (cx - 55 * z, cy - 10 * z + sway)
+        ]
+        pygame.draw.polygon(fish_surf, body_col, tail_pts)
 
-        # 3. Render Fins (Plakat Style: Short & Stout)
-        # Dorsal (Top) - Smaller and rounded
-        draw_plakat_fin((int(x - 8 * z * facing), int(y + 2 * z)), 35 * z, 30 * z, (r, g, b), 200, True)
-        # Anal (Bottom) - Runs along the back half
-        draw_plakat_fin((int(x - 12 * z * facing), int(y + 14 * z)), 50 * z, 35 * z, (r, g, b), 200, False)
-        # Caudal (Tail) - Strong spade/D-shape
-        draw_plakat_fin((int(x - 24 * z * facing), int(y + 8 * z)), 45 * z, 40 * z, (r, g, b), 220, True, True)
+        # 6. HEAD & EYE (Set very high and forward)
+        ex, ey = int(cx + 30 * z), int(cy - 28 * z)
+        pygame.draw.circle(fish_surf, (20, 20, 20), (ex, ey), int(5 * z))
+        pygame.draw.circle(fish_surf, (255, 255, 255, 200), (ex + 1, ey - 1), int(1.5 * z))
 
-        surface.blit(fin_surf, (0, 0))
-
-        # 4. Metallic Body
-        bw, bh = 45 * z, 18 * z  # Plakats have thicker, more muscular bodies
-        bx = x - bw if facing == 1 else x
-        body_rect = pygame.Rect(int(bx + (12 * z if facing == 1 else 0)), int(y), int(bw), int(bh))
-        pygame.draw.ellipse(surface, base_col, body_rect)
-
-        # Specular Highlight (The "Platinum" Shine)
-        shine_col = (255, 255, 255, 120)
-        shine_rect = pygame.Rect(int(bx + (15 * z if facing == 1 else 5 * z)), int(y + 3 * z), int(25 * z), int(6 * z))
-        shine_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        pygame.draw.ellipse(shine_surf, shine_col, shine_rect)
-        surface.blit(shine_surf, (0, 0))
-
-        # 5. Face & Eye
-        snout_x = x + (6 * z if facing == 1 else -6 * z)
-        pygame.draw.circle(surface, base_col, (int(snout_x), int(y + 9 * z)), int(8 * z))
-
-        eye_x = x + (5 * z if facing == 1 else -5 * z)
-        pygame.draw.circle(surface, (20, 20, 20), (int(eye_x), int(y + 8 * z)), int(4 * z))
-        pygame.draw.circle(surface, (255, 255, 255), (int(eye_x - 1 * facing), int(y + 7 * z)), 1)
-
-        # Large "Platty" Pectoral Fin
-        pec_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        pygame.draw.polygon(pec_surf, (255, 255, 255, 180), [
-            (int(x - 2 * z * facing), int(y + 11 * z)),
-            (int(x - 18 * z * facing), int(y + 18 * z + sway * 0.3)),
-            (int(x - 6 * z * facing), int(y + 22 * z))
-        ])
-        surface.blit(pec_surf, (0, 0))
+        # Final Blit
+        final = fish_surf if facing == 1 else pygame.transform.flip(fish_surf, True, False)
+        surface.blit(final, final.get_rect(center=(int(x), int(y))))
 
 
 def spawn_random_fish(fishes=[]):
     choice = random.random()
     sx = random.randint(50, SCREEN_WIDTH - 50)
 
-    # Cichlids spawn near the bottom
-    bottom_y = SCREEN_HEIGHT - 150
+    # Define vertical zones
+    surface_zone = random.randint(WATER_TOP + 10, WATER_TOP + 60)
+    mid_zone = random.randint(200, 500)
+    bottom_y = SCREEN_HEIGHT - 120
 
+    # 1. TOP DWELLERS (25% Total)
     if choice < 0.15:
-        return ClownLoach(sx, random.randint(200, 400))
-    elif choice < 0.15:  # New BalaShark spawn
-        return BalaShark(sx, random.randint(150, 350))
+        # Hatchetfish (Schooling surface dwellers)
+        return Hatchetfish(sx, surface_zone)
     elif choice < 0.25:
-        return NeonTetra(sx, random.randint(250, 450))
-    elif choice < 0.35:
-        return MajesticBetta(sx, random.randint(250, 450))
-    elif choice < 0.45:
-        return BoesemaniRainbow(sx, random.randint(150, 300))
-    elif choice < 0.60:  # 15% chance for Yellow Prince
-        return YellowPrinceCichlid(sx, bottom_y)
-    elif choice < 0.75:
-        return Cichlid(sx, bottom_y)
-    elif choice < 0.90:
-        return PeacockCichlid(sx, bottom_y - 10)
-    else:
-        return PearlGourami(sx, 120)
+        # Pearl Gourami (Elegant top-mid dwellers)
+        return PearlGourami(sx, surface_zone + 40)
 
-pygame.init()
+    # 2. MIDDLE DWELLERS & ACTIVE SWIMMERS (35% Total)
+    elif choice < 0.40:
+        # Neon Tetras (Small, high-density schoolers)
+        return NeonTetra(sx, mid_zone)
+    elif choice < 0.50:
+        # Boesemani Rainbow (Active mid-water swimmers)
+        return BoesemaniRainbow(sx, mid_zone - 50)
+    elif choice < 0.60:
+        # Bala Shark (Large, fast cruisers - lower density)
+        return BalaShark(sx, mid_zone)
+
+    # 3. BOTTOM DWELLERS & CICHLIDS (40% Total)
+    elif choice < 0.75:
+        # Clown Loach (Social scavengers - need a good group)
+        return ClownLoach(sx, SCREEN_HEIGHT - 80)
+    elif choice < 0.85:
+        # Peacock Cichlid (Colorful rock dwellers)
+        return PeacockCichlid(sx, bottom_y)
+    elif choice < 0.95:
+        # Yellow Prince (High-contrast bottom dwellers)
+        return YellowPrinceCichlid(sx, bottom_y)
+    else:
+        # Standard Cichlid
+        return Cichlid(sx, bottom_y)
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
@@ -1314,7 +1374,7 @@ except:
 fishes = [spawn_random_fish() for _ in range(30)]
 snails = [Snail() for _ in range(3)] # Add 3 snails to start
 auto_feed_timer = random.randint(100, 300)
-plants = [Plant(x, random.choice(["Rotala", "Ludwigia", "Vallisneria", "Anubias"])) for x in
+plants = [Plant(x, random.choice(["Rotala", "Ludwigia", "Vallisneria", "Anubias", "TigerLotus"])) for x in
           range(40, SCREEN_WIDTH, 30)]
 grains = [(random.randint(0, SCREEN_WIDTH), random.randint(540, 600), random.choice([(190, 170, 110), (225, 200, 140)]))
           for _ in range(600)]
@@ -1360,6 +1420,16 @@ while True:
                 print(f"\n--- ALERT: STARVING FISH DETECTED ({starving_count}) ---")
                 print(log_output.strip())
                 print("---------------------------------------------------\n")
+            if starving_count > 10:
+                print("!!! CRITICAL STARVATION: MASSIVE ALGAE BLOOM TRIGGERED !!!")
+                # Spawn 50 new algae spots instantly
+                for _ in range(50):
+                    # Spawn mostly in the middle/bottom where Loaches and Cichlids eat
+                    new_algae = (
+                        random.randint(20, SCREEN_WIDTH - 20),
+                        random.randint(300, SCREEN_HEIGHT - SAND_HEIGHT)
+                    )
+                    algae.append(new_algae)
 
         screen.blit(bg_image, (0, 0))
         bg_s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -1439,8 +1509,10 @@ while True:
                         print(f"Error loading: {music_files[current_music_idx]}")
                 if e.key == pygame.K_n:
                     current_light_idx = (current_light_idx + 1) % len(LIGHT_MODES)
-                    mode_name = LIGHT_MODES[current_light_idx]["name"]
-                    print(f"Lighting changed to: {mode_name}")
+                    # Set the notification text and "pop" it to full visibility
+                    light_notif_text = f"Mode: {LIGHT_MODES[current_light_idx]['name']}"
+                    light_notif_alpha = 255
+                    print(f"Lighting: {light_notif_text}")
                 if e.key == pygame.K_b:
                     bg_index = (bg_index + 1) % len(bg_files)
                     try:
@@ -1460,21 +1532,7 @@ while True:
             if e.type == pygame.MOUSEBUTTONDOWN:
                 pellets.append(FoodPellet(*e.pos))
 
-        LOG_INTERVAL = 180  # Define this globally or right here
-        if frame % LOG_INTERVAL == 0:
-            print(f"\n--- FISH STATUS LOG (Frame: {frame}) ---")
-            for f in fishes:
-                status = "Full"
-                if f.hunger > 70:
-                    status = "STARVING"
-                elif f.hunger > 30:
-                    status = "Hungry"
 
-                fish_type = f.__class__.__name__
-                # Note: Ensure you added self.id and self.hunger to the Fish class!
-                print(f"[{fish_type} #{getattr(f, 'id', '???')}] Hunger: {f.hunger:.1f}% | Status: {status}")
-            print("---------------------------------------\n")
-        # -------------------------------------
 
         if frame % ALGAE_SPAWN_RATE == 0 and len(algae) < 35:
             algae.append((random.randint(10, SCREEN_WIDTH - 10), random.randint(100, 500)))
@@ -1502,7 +1560,7 @@ while True:
         light_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
 
         if mode["name"] == "RGB STROBE":
-            t = pygame.time.get_ticks() * 0.005
+            t = pygame.time.get_ticks() * 0.0005
             r = int(127 + 127 * math.sin(t))
             g = int(127 + 127 * math.sin(t + 2))
             b = int(127 + 127 * math.sin(t + 4))
@@ -1515,6 +1573,23 @@ while True:
 
         # Apply the light
         screen.blit(light_surf, (0, 0))
+    if light_notif_alpha > 0:
+        # Create a small surface for the text to allow per-pixel alpha fading
+        temp_font = pygame.font.SysFont("Arial", 16, italic=True)
+        # Use a soft off-white color
+        text_surf = temp_font.render(light_notif_text, True, (220, 220, 220))
+
+        # Create a container surface for the fade effect
+        notif_surf = pygame.Surface(text_surf.get_size(), pygame.SRCALPHA)
+        notif_surf.blit(text_surf, (0, 0))
+        notif_surf.set_alpha(light_notif_alpha)
+
+        # Position it in the top right with some padding
+        padding = 20
+        screen.blit(notif_surf, (SCREEN_WIDTH - text_surf.get_width() - padding, padding))
+
+        # Slowly fade out (adjust 2 for faster/slower fade)
+        light_notif_alpha = max(0, light_notif_alpha - 2)
 
     pygame.display.flip()
     clock.tick(60)
