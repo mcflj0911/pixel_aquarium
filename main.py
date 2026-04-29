@@ -1296,10 +1296,10 @@ def spawn_random_fish(fishes=None):
         (0.25, BoesemaniRainbow, mid_zone - 50),
         (0.30, BalaShark, mid_zone),
         (0.20, ClownLoach, floor_y - 20),
-        (0.20, PeacockCichlid, bottom_y),
-        (0.28, YellowPrinceCichlid, bottom_y),
-        (0.26, IceBlueCichlid, bottom_y),
-        (1.00, Cichlid, bottom_y)
+        (0.60, PeacockCichlid, mid_zone),
+        (1.70, YellowPrinceCichlid, mid_zone),
+        (1.80, IceBlueCichlid, mid_zone),
+        (1.00, Cichlid, mid_zone)
     ]
 
     choice = random.random()
@@ -1436,7 +1436,7 @@ while True:
         if auto_feed_timer <= 0:
             if len(pellets) < 15:
                 pellets.append(FoodPellet(random.randint(50, SCREEN_WIDTH - 50), WATER_TOP))
-            auto_feed_timer = random.randint(120, 420)
+            auto_feed_timer = 100
 
         for f in fishes[:]:
 
