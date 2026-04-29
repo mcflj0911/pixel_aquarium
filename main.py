@@ -237,69 +237,6 @@ class Snail:
         pygame.draw.line(surface, (210, 200, 160), (self.pos.x + 4, self.pos.y + 2), (self.pos.x + 8, self.pos.y - 2), 1)
 
 
-class Shrimp:
-    def __init__(self):
-        # Auto-initialize coordinates
-        self.pos = pygame.Vector2(
-            random.randint(50, SCREEN_WIDTH - 50),
-            random.randint(SCREEN_HEIGHT - 80, SCREEN_HEIGHT - 40)
-        )
-        self.vel = pygame.Vector2(random.uniform(-0.5, 0.5), 0)
-        self.acc = pygame.Vector2(0, 0)
-
-        # INCREASED Z: Keep them closer to the front (0.8 - 1.1)
-        # so they receive more light from the 'water'
-        self.z = random.uniform(0.85, 1.05)
-        self.max_speed = 1.2
-
-        self.on_rock = None
-        self.climb_offset = pygame.Vector2(0, 0)
-        self.hide_timer = 0
-
-        # Bright high-contrast colors (Neon Red or Bright Sky Blue)
-        self.color = (255, 50, 50) if random.random() > 0.5 else (50, 200, 255)
-
-    def get_depth_color(self, color):
-        # Boosted lighting math specifically for small critters
-        dim = 0.6 + (self.z * 0.4)
-        return (int(min(255, color[0] * dim)),
-                int(min(255, color[1] * dim)),
-                int(min(255, color[2] * dim)))
-
-    def draw(self, surface):
-        # Reduced hiding threshold so they stay visible longer
-        if self.hide_timer > 175: return
-
-        z, x, y = self.z, self.pos.x, self.pos.y
-        facing = 1 if self.vel.x >= 0 else -1
-
-        # Get primary color and a lighter highlight color
-        body_col = self.get_depth_color(self.color)
-        high_col = (min(255, body_col[0] + 40), min(255, body_col[1] + 40), min(255, body_col[2] + 40))
-
-        # 1. LARGER SEGMENTED BODY
-        # We use a multiplier (e.g., 1.5x) to make them pop
-        scale = 1.8
-
-        # Head/Carapace
-        pygame.draw.ellipse(surface, body_col, (x - 10 * z * scale, y, 20 * z * scale, 10 * z * scale))
-
-        # Tail segment (curved slightly upward)
-        tail_rect = (x - 18 * z * scale * facing, y + 2 * z, 14 * z * scale, 7 * z * scale)
-        pygame.draw.ellipse(surface, body_col, tail_rect)
-
-        # 2. ANTENNAE (White/Pale for visibility)
-        ant_col = (220, 220, 220)  # Bright pale grey
-        pygame.draw.line(surface, ant_col, (x + 8 * z * facing, y + 4 * z), (x + 35 * z * facing, y - 15 * z), 1)
-        pygame.draw.line(surface, ant_col, (x + 8 * z * facing, y + 6 * z), (x + 30 * z * facing, y - 5 * z), 1)
-
-        # 3. LEGS (Small frantic lines)
-        for i in range(3):
-            lx = x - (5 * i * z * facing)
-            pygame.draw.line(surface, body_col, (lx, y + 8 * z), (lx - 4 * z * facing, y + 14 * z), 1)
-
-        # 4. THE EYE (Tiny black dot)
-        pygame.draw.circle(surface, (10, 10, 10), (int(x + 12 * z * facing), int(y + 4 * z)), int(2 * z))
 
 class Plant:
     def __init__(self, x, species_type):
@@ -1554,7 +1491,6 @@ except:
 
 fishes = [spawn_random_fish() for _ in range(30)]
 snails = [Snail() for _ in range(3)] # Add 3 snails to start
-shrimp = [Shrimp() for _ in range(10)]
 auto_feed_timer = random.randint(100, 300)
 plants = [Plant(x, random.choice(["Rotala", "Ludwigia", "Vallisneria", "Anubias", "TigerLotus"])) for x in
           range(40, SCREEN_WIDTH, 30)]
@@ -1647,6 +1583,7 @@ while True:
             auto_feed_timer = random.randint(120, 420)
 
         for f in fishes[:]:
+
             if isinstance(f, Pleco):
                 f.behavior(fishes, algae)
             else:
@@ -1677,8 +1614,7 @@ while True:
         for s in snails:
             s.update(algae)
             s.draw(screen)
-        for sh in shrimp:
-            s.draw(screen)
+
 
 
         cs = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -1738,7 +1674,6 @@ while True:
                     current_state, frame = STATE_WELCOME, 0
                     fishes = [spawn_random_fish() for _ in range(30)]
                     snails = [Snail() for _ in range(3)]
-                    shrimp = [Shrimp() for _ in range(10)]
                     rocks = create_hardscape()  # Re-spawn rocks
                     pebbles = create_pebbles(50)
                     algae.clear()
