@@ -7,53 +7,30 @@ A high-fidelity, interactive aquarium ecosystem built with Python and **Pygame-C
 ## 🌟 Key Features
 
 ### 🐟 Sophisticated Fish Ecosystem
-* **Diverse Species**: Includes Bala Sharks, Clown Loaches, Discus, Neon Tetras, Boesemani Rainbowfish, Pearl Gouramis, and various Cichlids.
+* **Diverse Species**: Includes Bala Sharks, Plecos, Snails, Neon Tetras, Cichlids (Yellow Prince, Ice Blue, Peacock), Pearl Gouramis, Boesemani Rainbowfish, Clown Loaches, and Tiger Barbs.
 * **Specialized AI**:
-    * **Clown Loach**: Bottom-dwelling scavenger logic with "zoomies" and social huddling.
-    * **Bala Shark**: High-speed torpedo movement with schooling alignment.
-    * **Hatchetfish**: Strict surface-tethering behavior for top-water realism.
-* **Hunger & Health System**: Fish gradually get hungry and will actively seek out food pellets or algae.
-* **Emergency Bloom**: Automatic algae spawning during critical starvation events (>10 starving fish) to prevent ecosystem collapse.
+    * **Bala Shark**: High-speed torpedo movement with schooling alignment and active horizontal bursts.
+    * **Pleco**: Bottom-dwelling scavengers with an aggressive search mode for algae and a "suction lock" feeding logic.
+    * **Snail**: Slow-moving cleaners that leave subtle slime trails and track nearby algae.
+    * **Clown Loach**: Scavenging "snake" movement with "zoomies" and social huddling.
+    * **Cichlids**: Territorial behavior including patrolling, defending territory, and sifting sand.
+* **Hunger & Health System**: Fish metabolic rates are influenced by speed; they must seek food pellets or algae to maintain health. High starvation levels can trigger a massive algae bloom.
+* **Dynamic Hardscape**: Procedurally generated cave structures and scattered rocks that respect depth (Z-axis) for realistic overlapping.
+
+### 🌿 Living Flora
+* **Interactive Plants**: Species include Vallisneria, Anubias, Rotala, Ludwigia, and Tiger Lotus.
+* **Biological Activity**: Plants realistically sway and occasionally release oxygen bubbles from their base.
+* **Procedural Growth**: Each plant has unique segment counts, sway speeds, and color tints.
 
 ### 💡 Dynamic Lighting System (Toggle: 'N')
-Switch between 11 discreet lighting profiles with a smooth fading notification in the top right:
-* **Deep Amazon**: Tannin-heavy tea water for a natural look.
-* **Moonlight**: Low-light blue tint for a midnight vibe.
-* **Planted Grow**: Pink-spectrum lighting to make plant reds pop.
-* **RGB Strobe**: Dynamic, cycling colors for a high-energy atmosphere.
-
-### 🎵 Audio Management (Toggle: 'M')
-* **Circular Playlist**: Automatically cycles through your `bgmusic.mp3` collection.
-* **Normalized Audio**: Volume is hard-coded to a discreet 40% (0.4) to provide a relaxing background ambiance without overpowering sound effects.
-
-### 🌿 High-End Aquascaping
-* **Tiger Lotus (Eye Candy)**: Procedurally generated red/purple plants with heart-shaped leaves, unique "tiger" mottling, and a rhythmic color-pulse animation.
-* **Hardscape**: Randomized cave structures and depth-sorted pebbles.
-* **Caustics**: Dynamic light beams that shift across the tank for a "shimmer" effect.
-
-## ⚙️ Installation Procedure
-
-This project is optimized for **Pygame-CE** (Community Edition). Follow these steps to set up your environment:
-
-1.  **Ensure Python is Installed**: This simulator requires Python 3.8 or higher.
-2.  **Remove Standard Pygame**: To avoid namespace conflicts, it is recommended to uninstall the standard version:
-    ```bash
-    pip uninstall pygame
-    ```
-3.  **Install Pygame-CE**:
-    ```bash
-    pip install pygame-ce
-    ```
-4.  **Prepare Assets**: Ensure the `/doodads` folder exists in the root directory and contains your assets (pebbles, rocks, and music files).
-
-## 🚀 Running the Simulator
-
-1.  Open your terminal or command prompt.
-2.  Navigate to the project directory.
-3.  Execute the script:
-    ```bash
-    python main.py
-    ```
+Switch between 11 discreet lighting profiles with a smooth fading notification:
+* **LED RGB White**: Neutral, clear lighting.
+* **Warm / Warm White**: Simulates home and amber-tinted lighting.
+* **Deep Amazon**: Tannin-heavy tea water for a natural blackwater look.
+* **Moonlight**: Low-light blue tint with increased opacity to simulate darkness.
+* **Planted Grow**: Pink-spectrum lighting to promote plant aesthetics.
+* **RGB Strobe**: Dynamic, cycling colors that shift over time.
+* **Additional Modes**: Includes Cool, Actinic, Sunset Gold, and Mild Green.
 
 ## 🎮 Controls
 
@@ -63,22 +40,19 @@ This project is optimized for **Pygame-CE** (Community Edition). Follow these st
 | **N** | Toggle Lighting Mode (Fades in top-right) |
 | **M** | Toggle Background Music (Cycles playlist) |
 | **B** | Toggle Background Wall Art |
+| **V** | Toggle Audio Mute |
 | **R** | Reset the Aquarium / Re-spawn everything |
 
 ## 🛠️ Technical Details
 
-* **Resolution**: Maximizes monitor width with a fixed 800px height.
-* **Depth Sorting**: All entities (fish, rocks, pebbles) are sorted by their `Z` value to create a true 3D parallax effect.
-* **Optimized Rendering**: Uses per-pixel alpha surfaces for soft lighting effects and transparent fin rendering.
-* **Sand Logic**: Mathematically tethered sand dunes that scale perfectly with screen width.
+* **Resolution**: Dynamic width based on monitor size (`info.current_w - 300`) and a fixed height of 600px.
+* **Depth Sorting**: Entities utilize a `z` value (0.2 to 1.2) for scaling, shading, and draw order.
+* **Optimized Rendering**: Uses `pygame.SRCALPHA` for transparency in lighting, slime trails, and fin rendering.
+* **Sand Logic**: Tethered sand dunes calculated using `math.sin` and `math.cos`.
 
-## 📂 Asset Structure
-```text
-/
-├── main.py
-└── doodads/
-    ├── pebble.png
-    ├── rock.png
-    ├── splash.png
-    ├── wallart1.png ... wallart6.png
-    └── bgmusic.mp3  ... bgmusic4.mp3
+## 📂 Asset Requirements
+The simulator looks for assets in the `/doodads` folder:
+* `pebble.png` and `rock.png`
+* `splash.png`
+* Music files (`bgmusic.mp3` to `bgmusic4.mp3`)
+* Wall art files (`wallart.png` to `wallart9.png`)

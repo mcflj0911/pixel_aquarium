@@ -962,6 +962,70 @@ class YellowPrinceCichlid(Cichlid):
                         math.pi / 2, 1)
 
 
+class IceBlueCichlid(Cichlid):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.max_speed = 2.5
+        # Ice Blue colors: Pale sky blue with darker blue bars
+        self.base_color = (180, 230, 255)  # Ice Blue
+        self.stripe_color = (70, 130, 180)  # Steel Blue bars
+        self.fin_highlight = (255, 255, 255)  # White tips
+        self.z = random.uniform(0.5, 0.9)
+
+    def behavior(self, fishes):
+        # Cichlids are curious but territorial
+        # They like to "hover" near the rocks or bottom
+        if random.random() < 0.01:
+            # Quick darting movement
+            self.apply_force(pygame.Vector2(random.uniform(-1.5, 1.5), random.uniform(-0.8, 0.8)))
+
+        # Friction/Drag to help them "hover"
+        self.vel *= 0.98
+
+    def draw(self, surface):
+        self.draw_shadow(surface, 30)
+        z, x, y = self.z, self.pos.x, self.pos.y
+        facing = 1 if self.vel.x >= 0 else -1
+
+        # Calculate depth colors
+        body_col = self.get_depth_color(self.base_color)
+        bar_col = self.get_depth_color(self.stripe_color)
+
+        # 1. BODY (Classic Cichlid "Oval" shape)
+        # We'll use a slightly taller body than the Bala Shark
+        body_width, body_height = 60 * z, 35 * z
+        body_rect = (x - body_width // 2, y - body_height // 2, body_width, body_height)
+        pygame.draw.ellipse(surface, body_col, body_rect)
+
+        # 2. VERTICAL BARS (Characteristic of many Mbuna cichlids)
+        for i in range(5):
+            bar_x = x - (20 * z) + (i * 10 * z)
+            # Only draw bar if it's within the body width
+            bar_w = 4 * z
+            pygame.draw.rect(surface, bar_col, (bar_x, y - body_height // 2.5, bar_w, body_height * 0.8),
+                             border_radius=int(2 * z))
+
+        # 3. FINS
+        # Dorsal fin (long and runs down the back)
+        dorsal_pts = [
+            (x - 20 * z, y - body_height // 2),
+            (x + 15 * z, y - body_height // 2 - 10 * z),
+            (x + 25 * z, y - body_height // 4)
+        ]
+        pygame.draw.polygon(surface, body_col, dorsal_pts)
+        # White tip on dorsal
+        pygame.draw.line(surface, self.fin_highlight, dorsal_pts[0], dorsal_pts[1], max(1, int(2 * z)))
+
+        # Tail Fin (Rounded)
+        tail_rect = (x - 35 * z * facing, y - 12 * z, 15 * z, 24 * z)
+        pygame.draw.ellipse(surface, body_col, tail_rect)
+
+        # 4. FACE & EYE
+        eye_x = x + (18 * z * facing)
+        eye_y = y - (4 * z)
+        pygame.draw.circle(surface, (10, 10, 10), (int(eye_x), int(eye_y)), int(4 * z))
+        pygame.draw.circle(surface, (255, 255, 0), (int(eye_x), int(eye_y)), int(4 * z), 1)  # Yellow iris
+
 class PearlGourami(Fish):
     def __init__(self, x, y):
         top_y = random.randint(WATER_TOP + 40, WATER_TOP + 150)
@@ -1404,49 +1468,40 @@ class TigerBarb(Fish):
         surface.blit(final, final.get_rect(center=(int(x), int(y))))
 
 
-def spawn_random_fish(fishes=[]):
-    choice = random.random()
+def spawn_random_fish(fishes=None):
     sx = random.randint(50, SCREEN_WIDTH - 50)
 
     # Define vertical zones
     surface_zone = random.randint(WATER_TOP + 10, WATER_TOP + 60)
     mid_zone = random.randint(200, 500)
     bottom_y = SCREEN_HEIGHT - 120
+    floor_y = SCREEN_HEIGHT - 60
 
-    # 1. TOP DWELLERS (25% Total)
-    if choice < 0.15:
-        # TigerBarb (Schooling surface dwellers)
-        return TigerBarb(sx, surface_zone)
-    elif choice < 0.25:
-        # Pearl Gourami (Elegant top-mid dwellers)
-        return PearlGourami(sx, surface_zone + 40)
+    # Probability Map: (Cumulative Chance, Fish Class, Y-Coordinate)
+    spawn_table = [
+        # TOP DWELLERS (25%)
+        (0.15, TigerBarb, surface_zone),
+        (0.25, PearlGourami, surface_zone + 40),
 
-    # 2. MIDDLE DWELLERS & ACTIVE SWIMMERS (35% Total)
-    if choice < 0.10:  # 10% chance to spawn a Pleco
-        return Pleco(sx, SCREEN_HEIGHT - 60)
-    elif choice < 0.40:
-        # Neon Tetras (Small, high-density schoolers)
-        return NeonTetra(sx, mid_zone)
-    elif choice < 0.50:
-        # Boesemani Rainbow (Active mid-water swimmers)
-        return BoesemaniRainbow(sx, mid_zone - 50)
-    elif choice < 0.60:
-        # Bala Shark (Large, fast cruisers - lower density)
-        return BalaShark(sx, mid_zone)
+        # MIDDLE DWELLERS (35%)
+        (0.35, Pleco, floor_y),
+        (0.45, NeonTetra, mid_zone),
+        (0.55, BoesemaniRainbow, mid_zone - 50),
+        (0.60, BalaShark, mid_zone),
 
-    # 3. BOTTOM DWELLERS & CICHLIDS (40% Total)
-    elif choice < 0.75:
-        # Clown Loach (Social scavengers - need a good group)
-        return ClownLoach(sx, SCREEN_HEIGHT - 80)
-    elif choice < 0.85:
-        # Peacock Cichlid (Colorful rock dwellers)
-        return PeacockCichlid(sx, bottom_y)
-    elif choice < 0.95:
-        # Yellow Prince (High-contrast bottom dwellers)
-        return YellowPrinceCichlid(sx, bottom_y)
-    else:
-        # Standard Cichlid
-        return Cichlid(sx, bottom_y)
+        # BOTTOM DWELLERS & CICHLIDS (40%)
+        (0.70, ClownLoach, floor_y - 20),
+        (0.80, PeacockCichlid, bottom_y),
+        (0.88, YellowPrinceCichlid, bottom_y),
+        (0.96, IceBlueCichlid, bottom_y),  # Added Ice Blue here
+        (1.00, Cichlid, bottom_y)  # Remainder
+    ]
+
+    choice = random.random()
+
+    for chance, fish_class, y_pos in spawn_table:
+        if choice < chance:
+            return fish_class(sx, y_pos)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
@@ -1482,7 +1537,7 @@ try:
 except pygame.error:
     print(f"Could not load initial music: {music_files[0]}")
 
-bg_files, bg_index = ["wallart.png", "wallart2.png", "wallart3.png", "wallart4.png","wallart5.png","wallart6.png"], 0
+bg_files, bg_index = ["wallart.png", "wallart2.png", "wallart3.png", "wallart4.png","wallart5.png","wallart6.png","wallart7.png","wallart8.png","wallart9.png"], 0
 try:
     bg_image = pygame.transform.scale(pygame.image.load(get_path(bg_files[bg_index])), (SCREEN_WIDTH, SCREEN_HEIGHT))
 except:
@@ -1542,7 +1597,9 @@ while True:
                     starving_count += 1
 
             print("--- Current Tank Population ---")
-            for species, count in fish_counts.items():
+
+            sorted_fish = sorted(fish_counts.items(), key=lambda item: item[1], reverse=True)
+            for species, count in sorted_fish:
                 print(f"{species}: {count}")
 
             # Only print the log header if there is actually someone starving
