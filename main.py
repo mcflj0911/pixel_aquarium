@@ -7,9 +7,9 @@ import os
 ASSET_PATH = "doodads"
 SCREEN_WIDTH = 1400
 SCREEN_HEIGHT = 600
-SAND_HEIGHT = 60
+SAND_HEIGHT = 40
 WATER_TOP = 80
-ALGAE_SPAWN_RATE = 65
+ALGAE_SPAWN_RATE = 85
 MAX_HUNGER = 100
 
 CLR_WATER_TOP = (40, 100, 180)
@@ -29,6 +29,117 @@ def get_path(filename):
 
 pygame.mixer.init()
 
+
+class Pebble:
+    def __init__(self):
+        # Pebbles can be anywhere, but we'll focus on the sand depth
+        self.z = random.uniform(0.7, 1.2)
+        self.pos_x = random.randint(0, SCREEN_WIDTH)
+
+        # Calculate Y based on your sand dune math
+        self.base_y = (SCREEN_HEIGHT - SAND_HEIGHT) + \
+                      math.sin(self.pos_x * 0.02) * 5 + \
+                      math.cos(self.pos_x * 0.05) * 2
+
+        try:
+            original_img = pygame.image.load(get_path('pebble.png')).convert_alpha()
+            # Very small scale for pebbles
+            size_var = random.uniform(0.05, 0.12)
+            width = int(original_img.get_width() * self.z * size_var)
+            height = int(original_img.get_height() * self.z * size_var)
+            self.image = pygame.transform.scale(original_img, (width, height))
+
+            # Flip horizontally/vertically for maximum variety
+            if random.random() > 0.5:
+                self.image = pygame.transform.flip(self.image, True, random.random() > 0.5)
+        except:
+            # Fallback: tiny grey circle
+            self.image = pygame.Surface((int(6 * self.z), int(4 * self.z)), pygame.SRCALPHA)
+            pygame.draw.ellipse(self.image, (100, 102, 105), self.image.get_rect())
+
+    def draw(self, surface):
+        # Pebbles sit deep in the sand
+        sink = int(8 * self.z)
+        rect = self.image.get_rect(midbottom=(self.pos_x, int(self.base_y + sink)))
+        surface.blit(self.image, rect)
+
+def create_pebbles(count=40):
+    new_pebbles = [Pebble() for _ in range(count)]
+    # Sort by Z so they respect depth when overlapping
+    return sorted(new_pebbles, key=lambda p: p.z)
+
+
+class Rock:
+    def __init__(self, x=None, z=None, y_offset=0):
+        self.z = z if z is not None else random.uniform(0.7, 1.2)
+        self.pos_x = x if x is not None else random.randint(0, SCREEN_WIDTH)
+
+        self.base_y = (SCREEN_HEIGHT - SAND_HEIGHT) + math.sin(self.pos_x * 0.02) * 5 + math.cos(self.pos_x * 0.05) * 2
+        self.y_offset = y_offset
+
+        try:
+            original_img = pygame.image.load(get_path('rock.png')).convert_alpha()
+            size_mod = 0.25 if y_offset == 0 else 0.2
+            width = int(original_img.get_width() * self.z * size_mod)
+            height = int(original_img.get_height() * self.z * size_mod)
+
+            if y_offset < -20:
+                height = int(height * 0.7)
+
+            self.image = pygame.transform.scale(original_img, (width, height))
+            if random.random() > 0.5:
+                self.image = pygame.transform.flip(self.image, True, False)
+        except:
+            self.image = pygame.Surface((int(30 * self.z), int(20 * self.z)), pygame.SRCALPHA)
+            pygame.draw.ellipse(self.image, (70, 72, 75), self.image.get_rect())
+
+    def draw(self, surface):
+        # SINK DEPTH ADJUSTMENT:
+        # Increase the '35' to push the rocks even deeper into the sand.
+        # Foundation rocks (y_offset >= 0) now sink deeper than before.
+        sink = int(35 * self.z) if self.y_offset >= 0 else 0
+
+        # We apply the sink to the y-coordinate
+        rect = self.image.get_rect(midbottom=(self.pos_x, int(self.base_y + self.y_offset + sink)))
+        surface.blit(self.image, rect)
+
+def create_hardscape():
+    new_rocks = []
+    # Build 2 distinct cave structures
+    for _ in range(2):
+        cx = random.randint(200, SCREEN_WIDTH - 200)
+        cz = random.uniform(0.7, 1.2)
+
+        cave_w = random.randint(100, 150)  # Width of the cave opening
+        cave_h = random.randint(60, 100)  # Height of the arch
+
+        # 1. Build Left Pillar (vertical stack)
+        for i in range(3):
+            new_rocks.append(Rock(cx - cave_w // 2 + random.randint(-10, 10), cz, y_offset=-(i * 25)))
+
+        # 2. Build Right Pillar (vertical stack)
+        for i in range(3):
+            new_rocks.append(Rock(cx + cave_w // 2 + random.randint(-10, 10), cz, y_offset=-(i * 25)))
+
+        # 3. Build the Roof (Parabolic Arc)
+        num_roof_rocks = 4
+        for i in range(num_roof_rocks):
+            # t goes from 0.2 to 0.8 to span the space between pillars
+            t = (i + 1) / (num_roof_rocks + 1)
+            rx = cx - cave_w // 2 + (cave_w * t)
+
+            # Parabolic formula to create the curve of the arch
+            ry = -cave_h * (1 - 4 * (t - 0.5) ** 2)
+            new_rocks.append(Rock(rx + random.randint(-15, 15), cz, y_offset=int(ry - 40)))
+
+    # 4. Scattered Pebbles (Noise)
+    # Adds single rocks elsewhere so the tank doesn't look too symmetrical
+    for _ in range(10):
+        new_rocks.append(Rock())
+
+    # Sort by Z (depth) and then Y-offset
+    # This ensures "lower" rocks in the pile are drawn behind "higher" ones correctly
+    return sorted(new_rocks, key=lambda r: (r.z, -r.y_offset))
 
 class Plant:
     def __init__(self, x, species_type):
@@ -863,10 +974,12 @@ except:
 fishes = [spawn_random_fish() for _ in range(30)]
 auto_feed_timer = random.randint(100, 300)
 plants = [Plant(x, random.choice(["Rotala", "Ludwigia", "Vallisneria", "Anubias"])) for x in
-          range(40, SCREEN_WIDTH, 60)]
+          range(40, SCREEN_WIDTH, 80)]
 grains = [(random.randint(0, SCREEN_WIDTH), random.randint(540, 600), random.choice([(190, 170, 110), (225, 200, 140)]))
           for _ in range(600)]
 algae, pellets, bubbles, frame = [], [], [], 0
+rocks = create_hardscape()
+pebbles = create_pebbles(50)
 
 caustic_beams = [
     [random.randint(0, SCREEN_WIDTH), random.randint(20, 60), random.uniform(0.5, 1.5), random.uniform(0, 2 * math.pi)]
@@ -914,11 +1027,19 @@ while True:
         for f in sorted_f:
             if f.z <= 0.9:
                 f.draw(screen)
+        for p in pebbles:
+            p.draw(screen)
+        for r in rocks:
+            if r.z < 0.95:
+                r.draw(screen)
         for p in plants:
             p.draw(screen, frame)
         for f in sorted_f:
             if f.z > 0.9:
                 f.draw(screen)
+        for r in rocks:
+            if r.z >= 0.95:
+                r.draw(screen)
 
         cs = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         for b in caustic_beams:
@@ -944,6 +1065,8 @@ while True:
                 if e.key == pygame.K_r:
                     current_state, frame = STATE_WELCOME, 0
                     fishes = [spawn_random_fish() for _ in range(30)]
+                    rocks = create_hardscape()  # Re-spawn rocks
+                    pebbles = create_pebbles(50)
                     algae.clear()
                     pellets.clear()
                     bubbles.clear()
