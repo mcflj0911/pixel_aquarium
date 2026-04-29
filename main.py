@@ -161,6 +161,12 @@ class Plant:
     def draw(self, surface, frame):
         base_y = (SCREEN_HEIGHT - SAND_HEIGHT) + math.sin(self.pos_x * 0.02) * 5 + math.cos(self.pos_x * 0.05) * 2
 
+        # --- BUBBLE SPAWNING LOGIC ---
+        # 0.2% chance per frame to spawn a bubble from the base of the plant
+        if random.random() < 0.002:
+            bubbles.append(Bubble(self.pos_x, base_y))
+        # -----------------------------
+
         for i in range(self.segments):
             taper = 1.0 - (i / self.segments)
             sway_intensity = (i ** 1.5) * 0.8
@@ -250,7 +256,6 @@ class Plant:
                 if i == 0:
                     pygame.draw.ellipse(surface, (40, 30, 20), (self.pos_x - 15, base_y - 5, 30, 12))
                     pygame.draw.ellipse(surface, (60, 50, 30), (self.pos_x - 12, base_y - 3, 24, 6))
-
 
 class FoodPellet:
     def __init__(self, x, y):
@@ -974,7 +979,7 @@ except:
 fishes = [spawn_random_fish() for _ in range(30)]
 auto_feed_timer = random.randint(100, 300)
 plants = [Plant(x, random.choice(["Rotala", "Ludwigia", "Vallisneria", "Anubias"])) for x in
-          range(40, SCREEN_WIDTH, 80)]
+          range(40, SCREEN_WIDTH, 30)]
 grains = [(random.randint(0, SCREEN_WIDTH), random.randint(540, 600), random.choice([(190, 170, 110), (225, 200, 140)]))
           for _ in range(600)]
 algae, pellets, bubbles, frame = [], [], [], 0
