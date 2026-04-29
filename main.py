@@ -6,7 +6,7 @@ import os
 
 ASSET_PATH = "doodads"
 SCREEN_WIDTH = 1400
-SCREEN_HEIGHT = 600
+SCREEN_HEIGHT = 800
 SAND_HEIGHT = 40
 WATER_TOP = 80
 ALGAE_SPAWN_RATE = 20
@@ -469,9 +469,9 @@ class BalaShark(Fish):
     def __init__(self, x, y):
         super().__init__(x, y)
         # Bala Sharks are sleek and fast
-        self.z = random.uniform(0.6, 1.0)
-        self.max_speed = 3.5
-        self.lerp_speed = 0.15
+        self.z = random.uniform(0.2, 0.6)
+        self.max_speed = 5.5
+        self.lerp_speed = 0.35
         self.angle = 0.0
 
         # Classic Silver/Tinfoil body with black trim
@@ -991,96 +991,140 @@ class PeacockCichlid(Cichlid):
         pygame.draw.circle(surface, (255, 200, 0), (int(x - 6 * z * facing), int(y + 3 * z)), int(2.5 * z), 1)
 
 
-class SuperRedSyn(Cichlid):
+class ClownLoach(Fish):
     def __init__(self, x, y):
         super().__init__(x, y)
-        # Deep body cichlid proportions
-        self.z = random.uniform(0.7, 1.1)
-        self.max_speed = 1.8
+        # Clown loaches are sleek and somewhat elongated
+        self.z = random.uniform(0.3, 0.6)
+        self.max_speed = 2.5
+        self.lerp_speed = 0.12
         self.angle = 0.0
-        self.lerp_speed = 0.1
-        self.wiggle_energy = 0.0
 
-        # High-intensity red/orange base colors
-        self.base_color = (255, random.randint(20, 60), random.randint(0, 30))
-        self.face_color = (200, 40, 40) # Slightly darker red for the face gradient
-        self.eye_iris = (255, 200, 0)   # Bright yellow/gold eyes typical of Syns
+        # Characteristic bright orange body
+        self.base_color = (255, 160, 20)
+        self.stripe_color = (15, 15, 15)  # Deep black stripes
+        self.fin_color = (200, 50, 30)  # Reddish fins
 
     def behavior(self, fishes):
-        # Keeps the social/interactive behavior but uses Cichlid-style movement logic
-        m_pos = pygame.Vector2(pygame.mouse.get_pos())
-        if self.pos.distance_to(m_pos) < 250:
-            desired = (m_pos - self.pos).normalize()
-            self.apply_force(desired * 0.1)
-            self.wiggle_energy = min(1.0, self.wiggle_energy + 0.04)
+        # 1. SUBSTRATE ADHERENCE (Better than bobbing)
+        # We target a specific range at the bottom (e.g., bottom 60 pixels)
+        ground_level = SCREEN_HEIGHT - 60
+        if self.pos.y < ground_level:
+            # Gravity-like pull toward the sand
+            self.apply_force(pygame.Vector2(0, 0.15))
         else:
-            # Standard cichlid patrol behavior
-            self.wiggle_energy *= 0.95
-            if self.pos.distance_to(self.territory) > 100:
-                self.apply_force((self.territory - self.pos) * 0.01)
+            # Gently push up if they hit the very bottom "glass"
+            self.apply_force(pygame.Vector2(0, -0.1))
 
-        # Update angle for swimming tilt
+        # 2. SCAVENGING "SNAKE" MOVEMENT
+        # Instead of straight lines, they wiggle horizontally as they search
+        t = pygame.time.get_ticks() * 0.005
+        search_wiggle = math.sin(t + self.id) * 0.5
+        self.apply_force(pygame.Vector2(search_wiggle, 0))
+
+        # 3. THE "LOACHY" ZOOMIES (Random sudden bursts)
+        if random.random() < 0.005:  # Rare chance to dart
+            zoom_dir = pygame.Vector2(random.uniform(-5, 5), random.uniform(-3, 1))
+            self.apply_force(zoom_dir)
+
+        # 4. SOCIAL HUDDLING
+        for o in fishes:
+            if isinstance(o, ClownLoach) and o != self:
+                dist = self.pos.distance_to(o.pos)
+                if dist < 80:
+                    # They love "piling up" on each other
+                    self.apply_force((o.pos - self.pos) * 0.02)
+                elif dist > 200:
+                    # Don't wander too far from the group
+                    self.apply_force((o.pos - self.pos) * 0.005)
+
+        # 5. DYNAMIC ROTATION (Head-Down Scavenging)
         if self.vel.length() > 0.1:
-            target_angle = math.degrees(math.atan2(-self.vel.y, abs(self.vel.x)))
+            # Calculate base movement angle
+            move_angle = math.degrees(math.atan2(-self.vel.y, abs(self.vel.x)))
+
+            # If they are near the bottom, force the head down 15-30 degrees
+            if self.pos.y > ground_level - 20:
+                target_angle = -20  # Look down at the sand
+            else:
+                target_angle = move_angle
+
             self.angle += (target_angle - self.angle) * self.lerp_speed
 
+        # Friction to prevent them from sliding forever
+        self.vel *= 0.96
+
     def draw(self, surface):
-        self.draw_shadow(surface, 50)
+        self.draw_shadow(surface, 30)
         z, x, y = self.z, self.pos.x, self.pos.y
         facing = self.vel.x >= 0
 
-        # Dimensions for a deep-bodied cichlid
-        surf_w, surf_h = int(180 * z), int(140 * z)
+        # Long, sleek surface
+        surf_w, surf_h = int(180 * z), int(100 * z)
         fish_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
         cx, cy = surf_w // 2, surf_h // 2
 
-        t = pygame.time.get_ticks() * (0.005 + self.wiggle_energy * 0.01)
-        sway = math.sin(t) * 5 * z
-
-        # Colors with depth handling
         body_col = self.get_depth_color(self.base_color)
-        head_col = self.get_depth_color(self.face_color)
+        t = pygame.time.get_ticks() * 0.01
+        sway = math.sin(t) * 4 * z
 
-        # 1. DRAW FINS (Dorsal and Anal - trailing edges)
-        fin_color = (*body_col, 180)
-        # Dorsal
-        pygame.draw.polygon(fish_surf, fin_color, [
-            (cx - 30*z, cy - 25*z), (cx + 10*z, cy - 40*z),
-            (cx - 60*z, cy - 55*z + sway), (cx - 50*z, cy - 10*z)
-        ])
-        # Anal
-        pygame.draw.polygon(fish_surf, fin_color, [
-            (cx - 30*z, cy + 25*z), (cx + 10*z, cy + 40*z),
-            (cx - 60*z, cy + 55*z - sway), (cx - 50*z, cy + 10*z)
-        ])
+        # 1. THE FINS (Reddish and pointed)
+        fin_c = (*self.fin_color, 200)
+        # Dorsal (Middle top)
+        pygame.draw.polygon(fish_surf, fin_c,
+                            [(cx, cy - 15 * z), (cx - 30 * z, cy - 40 * z), (cx - 45 * z, cy - 12 * z)])
+        # Pelvic (Bottom front)
+        pygame.draw.polygon(fish_surf, fin_c,
+                            [(cx + 20 * z, cy + 15 * z), (cx + 10 * z, cy + 30 * z), (cx, cy + 15 * z)])
 
-        # 2. DRAW BODY (Deep oval shape)
-        # Steep forehead gradient (Head to mid-body)
-        pygame.draw.ellipse(fish_surf, head_col, (cx - 20*z, cy - 40*z, 90*z, 80*z))
-        # Main body
-        pygame.draw.ellipse(fish_surf, body_col, (cx - 60*z, cy - 35*z, 110*z, 70*z))
+        # 2. THE BODY (Elongated, tapering toward the tail)
+        body_pts = [
+            (cx + 65 * z, cy + 5 * z),  # Pointed nose (pointing slightly down)
+            (cx + 20 * z, cy - 20 * z),  # Arch
+            (cx - 50 * z, cy - 10 * z),  # Tail root top
+            (cx - 50 * z, cy + 15 * z),  # Tail root bottom
+            (cx + 20 * z, cy + 22 * z)  # Deep belly
+        ]
+        pygame.draw.polygon(fish_surf, body_col, body_pts)
 
-        # 3. SCALES / SPOTS (Synspilum often have dark "flowerline" speckles near the tail)
-        for i in range(4):
-            sp_x = cx - 40*z + (i * 15*z)
-            sp_y = cy + math.cos(t + i) * 2*z
-            pygame.draw.circle(fish_surf, (20, 20, 20, 150), (int(sp_x), int(sp_y)), int(4*z))
+        # 3. THE THREE BLACK BANDS (Iconic Clown Loach Pattern)
+        # We draw these over the body
+        band_col = (*self.stripe_color, 240)
+        # Head Band (through the eye)
+        pygame.draw.polygon(fish_surf, band_col,
+                            [(cx + 35 * z, cy - 18 * z), (cx + 55 * z, cy - 5 * z), (cx + 45 * z, cy + 18 * z),
+                             (cx + 25 * z, cy + 5 * z)])
+        # Middle Band (V-shaped)
+        pygame.draw.polygon(fish_surf, band_col,
+                            [(cx - 5 * z, cy - 20 * z), (cx + 15 * z, cy - 15 * z), (cx, cy + 21 * z),
+                             (cx - 20 * z, cy + 15 * z)])
+        # Tail Band
+        pygame.draw.polygon(fish_surf, band_col,
+                            [(cx - 35 * z, cy - 14 * z), (cx - 50 * z, cy - 10 * z), (cx - 50 * z, cy + 15 * z),
+                             (cx - 45 * z, cy + 15 * z)])
 
-        # 4. TAIL (Rounded and broad)
-        tail_sway = math.sin(t * 1.2) * 8 * z
-        pygame.draw.polygon(fish_surf, fin_color, [
-            (cx - 60*z, cy - 5*z), (cx - 90*z, cy - 30*z + tail_sway),
-            (cx - 95*z, cy + tail_sway), (cx - 90*z, cy + 30*z + tail_sway),
-            (cx - 60*z, cy + 15*z)
-        ])
+        # 4. BARBELS (Whiskers on the nose)
+        for b in [-1, 1]:
+            bx = cx + 65 * z
+            by = cy + 5 * z
+            pygame.draw.line(fish_surf, body_col, (bx, by), (bx + 8 * z, by + b * 5 * z + sway), int(2 * z))
 
-        # 5. EYE (Characteristic gold iris)
-        ex, ey = int(cx + 45*z), int(cy - 10*z)
-        pygame.draw.circle(fish_surf, (0, 0, 0), (ex, ey), int(7*z))      # Socket
-        pygame.draw.circle(fish_surf, self.eye_iris, (ex, ey), int(5*z)) # Iris
-        pygame.draw.circle(fish_surf, (0, 0, 0), (ex, ey), int(3*z))      # Pupil
+        # 5. TAIL (Red and deeply forked)
+        t_sway = math.sin(t * 1.5) * 8 * z
+        tail_pts = [
+            (cx - 50 * z, cy + 2 * z),
+            (cx - 85 * z, cy - 30 * z + t_sway),
+            (cx - 70 * z, cy + t_sway),
+            (cx - 85 * z, cy + 30 * z + t_sway)
+        ]
+        pygame.draw.polygon(fish_surf, fin_c, tail_pts)
 
-        # Final transform and blit
+        # 6. EYE (Small and black, inside the first band)
+        ex, ey = int(cx + 45 * z), int(cy - 5 * z)
+        pygame.draw.circle(fish_surf, (0, 0, 0), (ex, ey), int(4 * z))
+        pygame.draw.circle(fish_surf, (255, 255, 255, 150), (ex + 1, ey - 1), int(1 * z))
+
+        # Final Blit
         final = fish_surf if facing else pygame.transform.flip(fish_surf, True, False)
         rotated = pygame.transform.rotate(final, self.angle if facing else -self.angle)
         surface.blit(rotated, rotated.get_rect(center=(int(x), int(y))))
@@ -1206,8 +1250,8 @@ def spawn_random_fish(fishes=[]):
     # Cichlids spawn near the bottom
     bottom_y = SCREEN_HEIGHT - 150
 
-    if choice < 0.05:
-        return SuperRedSyn(sx, random.randint(200, 400))
+    if choice < 0.15:
+        return ClownLoach(sx, random.randint(200, 400))
     elif choice < 0.15:  # New BalaShark spawn
         return BalaShark(sx, random.randint(150, 350))
     elif choice < 0.25:
@@ -1250,13 +1294,15 @@ def draw_welcome_screen():
     screen.blit(txt, txt.get_rect(center=br.center))
     return br
 
-
+# Music Configuration
+music_files = ["bgmusic.mp3", "bgmusic2.mp3", "bgmusic3.mp3", "bgmusic4.mp3"]
+current_music_idx = 0
+# Start the first track
 try:
-    pygame.mixer.music.load(get_path('bgmusic.mp3'))
-    pygame.mixer.music.play(-1)
-    pygame.mixer.music.set_volume(0.5)
-except:
-    pass
+    pygame.mixer.music.load(get_path(music_files[current_music_idx]))
+    pygame.mixer.music.play(-1) # -1 means loop indefinitely
+except pygame.error:
+    print(f"Could not load initial music: {music_files[0]}")
 
 bg_files, bg_index = ["wallart.png", "wallart2.png", "wallart3.png", "wallart4.png","wallart5.png","wallart6.png"], 0
 try:
@@ -1295,19 +1341,25 @@ while True:
 
         LOG_INTERVAL = 180  # Define this globally or right here
         if frame % LOG_INTERVAL == 0:
-            print(f"\n--- FISH STATUS LOG (Frame: {frame}) ---")
+            # We use a flag to check if there are any starving fish at all
+            starving_count = 0
+
+            # Temporary string to store the log entries
+            log_output = ""
+
             for f in fishes:
-                status = "Full"
                 if f.hunger > 70:
                     status = "STARVING"
-                elif f.hunger > 30:
-                    status = "Hungry"
+                    fish_type = f.__class__.__name__
+                    fish_id = getattr(f, 'id', '???')
+                    log_output += f"  > [{fish_type} #{fish_id}] Hunger: {f.hunger:.1f}%\n"
+                    starving_count += 1
 
-                fish_type = f.__class__.__name__
-                # Note: Ensure you added self.id and self.hunger to the Fish class!
-                print(f"[{fish_type} #{getattr(f, 'id', '???')}] Hunger: {f.hunger:.1f}% | Status: {status}")
-            print("---------------------------------------\n")
-        # -------------------------------------
+            # Only print the log header if there is actually someone starving
+            if starving_count > 0:
+                print(f"\n--- ALERT: STARVING FISH DETECTED ({starving_count}) ---")
+                print(log_output.strip())
+                print("---------------------------------------------------\n")
 
         screen.blit(bg_image, (0, 0))
         bg_s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -1373,6 +1425,18 @@ while True:
                 pygame.quit()
                 sys.exit()
             if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_m:
+                    # Circular increment
+                    current_music_idx = (current_music_idx + 1) % len(music_files)
+
+                    try:
+                        pygame.mixer.music.stop()
+                        pygame.mixer.music.load(get_path(music_files[current_music_idx]))
+                        pygame.mixer.music.set_volume(0.4)
+                        pygame.mixer.music.play(-1)
+                        print(f"Now playing: {music_files[current_music_idx]}")
+                    except pygame.error:
+                        print(f"Error loading: {music_files[current_music_idx]}")
                 if e.key == pygame.K_n:
                     current_light_idx = (current_light_idx + 1) % len(LIGHT_MODES)
                     mode_name = LIGHT_MODES[current_light_idx]["name"]
