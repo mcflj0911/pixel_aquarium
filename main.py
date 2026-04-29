@@ -1308,6 +1308,7 @@ def spawn_random_fish(fishes=None):
         if choice < chance:
             return fish_class(sx, y_pos)
 
+pygame.display.set_caption("Pixel Aquarium")
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
@@ -1482,7 +1483,6 @@ while True:
         screen.blit(cs, (0, 0))
 
         for e in pygame.event.get():
-            light_notif_alpha = 255
             if e.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -1506,7 +1506,7 @@ while True:
                         pygame.mixer.music.set_volume(0.7)
                         pygame.mixer.music.play(-1)
                         light_notif_text = f"NOW PLAYING: {music_files[current_music_idx]}"
-
+                        light_notif_alpha = 255
                     except pygame.error:
                         print(f"Error loading: {music_files[current_music_idx]}")
                 if e.key == pygame.K_n:
@@ -1517,6 +1517,7 @@ while True:
                 if e.key == pygame.K_b:
                     bg_index = (bg_index + 1) % len(bg_files)
                     light_notif_text = f"ART CHANGED TO: {bg_files[bg_index]}"
+                    light_notif_alpha = 255
                     try:
                         bg_image = pygame.transform.scale(pygame.image.load(get_path(bg_files[bg_index])),
                                                           (SCREEN_WIDTH, SCREEN_HEIGHT))
