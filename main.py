@@ -1291,16 +1291,14 @@ def spawn_random_fish(fishes=None):
     spawn_table = [
         (0.15, TigerBarb, surface_zone),
         (0.25, PearlGourami, surface_zone + 40),
-
-        (0.35, Pleco, floor_y),
-        (0.45, NeonTetra, mid_zone),
-        (0.55, BoesemaniRainbow, mid_zone - 50),
-        (0.60, BalaShark, mid_zone),
-
-        (0.70, ClownLoach, floor_y - 20),
-        (0.80, PeacockCichlid, bottom_y),
-        (0.88, YellowPrinceCichlid, bottom_y),
-        (0.96, IceBlueCichlid, bottom_y),
+        (0.25, Pleco, floor_y),
+        (0.55, NeonTetra, mid_zone),
+        (0.25, BoesemaniRainbow, mid_zone - 50),
+        (0.30, BalaShark, mid_zone),
+        (0.20, ClownLoach, floor_y - 20),
+        (0.20, PeacockCichlid, bottom_y),
+        (0.28, YellowPrinceCichlid, bottom_y),
+        (0.26, IceBlueCichlid, bottom_y),
         (1.00, Cichlid, bottom_y)
     ]
 
