@@ -10,7 +10,7 @@ SCREEN_WIDTH = info.current_w - 300
 SCREEN_HEIGHT = 600
 SAND_HEIGHT = 40
 WATER_TOP = 80
-ALGAE_SPAWN_RATE = 20
+ALGAE_SPAWN_RATE = 30
 MAX_HUNGER = 100
 
 CLR_WATER_TOP = (40, 100, 180)
@@ -516,6 +516,125 @@ class Fish:
         s_col = (20, 20, 20, 70) if self.health > 30 else (80, 20, 20, 90)
         pygame.draw.ellipse(surface, s_col, (self.pos.x, dune_y, width * self.z, 5))
 
+
+class Pleco(Fish):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.max_speed = 3.5  # Increased speed for aggressive hunting
+        self.max_force = 0.3  # Better turning/torque
+        self.z = random.uniform(0.65, 0.75) # Visible depth range
+        self.target_algae = None
+        self.eating_timer = 0
+
+    def behavior(self, fishes, algae_list):
+        # 1. DYNAMIC HUNGER TICK
+        # Hunger increases faster when moving quickly
+        # Base metabolic rate + (speed penalty)
+        movement_cost = self.vel.length() * 0.02
+        self.hunger = min(MAX_HUNGER, self.hunger + 0.05 + movement_cost)
+
+        # 2. AGGRESSIVE SEARCH (Only if hungry)
+        # If hunger > 20, they enter 'Work Mode'
+        if self.hunger > 20 and algae_list:
+            closest = None
+            min_dist = float('inf')
+            for a in algae_list:
+                dist = self.pos.distance_to(pygame.Vector2(a))
+                if dist < min_dist:
+                    min_dist = dist
+                    closest = a
+            self.target_algae = closest
+        else:
+            self.target_algae = None
+
+        # 3. MOVEMENT & FEEDING LOGIC
+        if self.eating_timer > 0:
+            self.eating_timer -= 1
+            self.vel *= 0.1 # Suction lock
+        elif self.target_algae:
+            target_vec = pygame.Vector2(self.target_algae)
+            dist = self.pos.distance_to(target_vec)
+
+            if dist < 8:
+                if self.target_algae in algae_list:
+                    algae_list.remove(self.target_algae)
+                    # Significant hunger reward for successfully cleaning
+                    self.hunger = max(0, self.hunger - 25)
+                    self.eating_timer = 20 # Fast eater (0.33s)
+                self.target_algae = None
+            else:
+                # Arrive Steering Behavior
+                desired = (target_vec - self.pos).normalize() * self.max_speed
+                steer = (desired - self.vel) * self.max_force
+                self.apply_force(steer)
+        else:
+            # Idle Creep (Gentle movement when full)
+            self.apply_force(pygame.Vector2(random.uniform(-0.05, 0.05), 0.02))
+
+        # 4. SAND TETHERING
+        # Plecos should strictly stick to the bottom half of the tank
+        target_y = SCREEN_HEIGHT - 60
+        if self.pos.y < target_y:
+            # Gravity-like pull back to the sand
+            self.apply_force(pygame.Vector2(0, 0.2))
+
+    def draw(self, surface):
+        self.draw_shadow(surface, 25)
+        z, x, y = self.z, self.pos.x, self.pos.y
+        facing = 1 if self.vel.x >= 0 else -1
+
+        # 1. ENHANCED COLORS
+        # Base body is dark, but spots will be lighter for contrast
+        body_col = self.get_depth_color((70, 65, 60))
+        spot_col = self.get_depth_color((110, 100, 90))  # Lighter tan/grey spots
+
+        # 2. THE BODY (Tadpole shape)
+        # Main Head/Chest
+        body_rect = (x - 25 * z, y, 50 * z, 24 * z)
+        pygame.draw.ellipse(surface, body_col, body_rect)
+
+        # Tail section
+        tail_pts = [
+            (x, y + 5 * z),
+            (x - 45 * z * facing, y + 12 * z),
+            (x, y + 19 * z)
+        ]
+        pygame.draw.polygon(surface, body_col, tail_pts)
+
+        # 3. MOTTLED PATTERN (The "Armor" Spots)
+        # Adding a few deterministic spots so they don't flicker
+        for i in range(5):
+            spot_x = x - (10 * i * z * facing) + (math.sin(i) * 5 * z)
+            spot_y = y + 8 * z + (math.cos(i) * 4 * z)
+            pygame.draw.circle(surface, spot_col, (int(spot_x), int(spot_y)), int(3 * z))
+
+        # 4. THE SUCKERMOUTH (Brighter to stand out)
+        pygame.draw.ellipse(surface, (100, 95, 90), (x + 8 * z * facing, y + 14 * z, 12 * z, 8 * z))
+
+        # 5. SAIL-FIN (Dorsal)
+        # Large, iconic pleco dorsal fin with "spines"
+        sail_pts = [
+            (x - 5 * z * facing, y + 2 * z),
+            (x - 35 * z * facing, y - 20 * z),  # Tall peak
+            (x - 20 * z * facing, y + 6 * z)
+        ]
+        pygame.draw.polygon(surface, body_col, sail_pts)
+        # Fin trim/detail
+        pygame.draw.aalines(surface, spot_col, False, sail_pts)
+
+        # 6. PECTORAL "WINGS"
+        # Plecos have wide side fins that rest on the glass/sand
+        pec_pts = [
+            (x + 5 * z * facing, y + 18 * z),
+            (x - 15 * z * facing, y + 30 * z),
+            (x - 5 * z * facing, y + 20 * z)
+        ]
+        pygame.draw.polygon(surface, body_col, pec_pts)
+
+        # 7. EYE (With a small highlight)
+        eye_pos = (int(x + 12 * z * facing), int(y + 6 * z))
+        pygame.draw.circle(surface, (10, 10, 10), eye_pos, int(3 * z))
+        pygame.draw.circle(surface, (200, 200, 200), (eye_pos[0] + 1, eye_pos[1] - 1), 1)
 
 class BalaShark(Fish):
     def __init__(self, x, y):
@@ -1182,10 +1301,10 @@ class ClownLoach(Fish):
         surface.blit(rotated, rotated.get_rect(center=(int(x), int(y))))
 
 
-class Hatchetfish(Fish):
+class TigerBarb(Fish):
     def __init__(self, x, y):
         super().__init__(x, y)
-        # Hatchetfish strictly stay at the surface
+        # TigerBarb strictly stay at the surface
         self.z = random.uniform(0.5, 0.8)
         self.max_speed = 1.2
         # They target the very top of the water column
@@ -1208,7 +1327,7 @@ class Hatchetfish(Fish):
 
         # 3. SOCIAL SPACING
         for o in fishes:
-            if isinstance(o, Hatchetfish) and o != self:
+            if isinstance(o, TigerBarb) and o != self:
                 dist = self.pos.distance_to(o.pos)
                 if dist < 60:
                     self.apply_force((self.pos - o.pos) * 0.01)
@@ -1222,68 +1341,61 @@ class Hatchetfish(Fish):
         z, x, y = self.z, self.pos.x, self.pos.y
         facing = 1 if self.vel.x >= 0 else -1
 
-        # Deep body surface
+        # Body canvas
         surf_w, surf_h = int(120 * z), int(120 * z)
         fish_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
         cx, cy = surf_w // 2, surf_h // 2
 
-        body_col = self.get_depth_color(self.base_color)
+        body_col = self.get_depth_color((230, 180, 50))  # Gold
+        stripe_col = self.get_depth_color((15, 15, 15))  # Solid Black
+        accent_col = self.get_depth_color((210, 40, 30))  # Red fin tips
         t = pygame.time.get_ticks() * 0.01
 
-        # 1. THE ICONIC "HATCHET" BODY
-        # A semi-circle/deep keel shape
-        body_pts = []
-        # Top line (Flat)
-        body_pts.append((cx + 40 * z, cy - 35 * z))  # Nose
-        body_pts.append((cx - 30 * z, cy - 35 * z))  # Tail base top
-        # Deep keel curve
-        for i in range(11):
-            angle = math.pi * (i / 10)
-            px = cx - 30 * z + (70 * z * (1 - i / 10))
-            py = cy - 35 * z + math.sin(angle) * 75 * z
-            body_pts.append((px, py))
-
+        # 1. DIAMOND BODY SHAPE
+        body_pts = [
+            (cx + 45 * z, cy),  # Nose
+            (cx + 10 * z, cy - 30 * z),  # Top peak
+            (cx - 30 * z, cy - 10 * z),  # Tail base top
+            (cx - 30 * z, cy + 10 * z),  # Tail base bottom
+            (cx + 10 * z, cy + 30 * z),  # Bottom peak
+        ]
         pygame.draw.polygon(fish_surf, body_col, body_pts)
 
-        # 2. LATERAL LINE & MARBLING
-        # Dark line through the middle
-        pygame.draw.line(fish_surf, self.stripe_color, (cx + 35 * z, cy - 25 * z), (cx - 30 * z, cy - 25 * z),
-                         int(2 * z))
+        # 2. CLIPPED TIGER STRIPES
+        # horizontal offsets for the 4 stripes
+        stripe_offsets = [25, 8, -8, -22]
 
-        # 3. WING-LIKE PECTORAL FINS (High on the body)
-        p_sway = math.sin(t * 0.8) * 10 * z
-        pec_pts = [
-            (cx + 15 * z, cy - 30 * z),
-            (cx - 5 * z, cy - 50 * z + p_sway),
-            (cx + 5 * z, cy - 35 * z)
-        ]
-        pygame.draw.polygon(fish_surf, (220, 220, 220, 150), pec_pts)
-        pygame.draw.aalines(fish_surf, (255, 255, 255, 180), True, pec_pts)
+        for sx in stripe_offsets:
+            # We calculate a 'height_factor' to shrink stripes near the nose/tail
+            # Stripes closer to the center (cx) are taller
+            dist_from_center = abs(sx) / 45.0
+            h_scale = 1.0 - (dist_from_center ** 2)  # Parabolic taper
 
-        # 4. SMALL FINS (Dorsal is tiny and far back)
-        # Dorsal
-        pygame.draw.polygon(fish_surf, body_col,
-                            [(cx - 15 * z, cy - 35 * z), (cx - 25 * z, cy - 45 * z), (cx - 30 * z, cy - 35 * z)])
-        # Anal (Tiny, along the back of the keel)
-        pygame.draw.polygon(fish_surf, body_col,
-                            [(cx - 10 * z, cy + 20 * z), (cx - 30 * z, cy + 10 * z), (cx - 30 * z, cy - 10 * z)])
+            s_w = int(7 * z)
+            s_h = int(50 * z * h_scale)
 
-        # 5. TAIL (Small and forked)
-        sway = math.sin(t) * 5 * z
-        tail_pts = [
-            (cx - 30 * z, cy - 25 * z),
-            (cx - 55 * z, cy - 40 * z + sway),
-            (cx - 45 * z, cy - 25 * z + sway),
-            (cx - 55 * z, cy - 10 * z + sway)
-        ]
+            # Draw the stripe centered vertically
+            s_rect = (int(cx + sx * z), int(cy - s_h // 2), s_w, s_h)
+            pygame.draw.rect(fish_surf, stripe_col, s_rect, border_radius=int(3 * z))
+
+        # 3. FINS & TAIL
+        # Dorsal fin
+        pygame.draw.polygon(fish_surf, accent_col,
+                            [(cx + 5 * z, cy - 25 * z), (cx - 5 * z, cy - 45 * z), (cx - 15 * z, cy - 25 * z)])
+
+        # Tail
+        sway = math.sin(t) * 6 * z
+        tail_pts = [(cx - 30 * z, cy), (cx - 55 * z, cy - 28 * z + sway), (cx - 45 * z, cy + sway),
+                    (cx - 55 * z, cy + 28 * z + sway)]
         pygame.draw.polygon(fish_surf, body_col, tail_pts)
+        pygame.draw.lines(fish_surf, accent_col, False, [tail_pts[1], tail_pts[0], tail_pts[3]], int(2 * z))
 
-        # 6. HEAD & EYE (Set very high and forward)
-        ex, ey = int(cx + 30 * z), int(cy - 28 * z)
-        pygame.draw.circle(fish_surf, (20, 20, 20), (ex, ey), int(5 * z))
-        pygame.draw.circle(fish_surf, (255, 255, 255, 200), (ex + 1, ey - 1), int(1.5 * z))
+        # 4. EYE
+        ex, ey = int(cx + 32 * z), int(cy - 3 * z)
+        pygame.draw.circle(fish_surf, (10, 10, 10), (ex, ey), int(5 * z))
+        pygame.draw.circle(fish_surf, (255, 255, 255, 150), (ex + 1, ey - 1), int(1.5 * z))
 
-        # Final Blit
+        # Final Render
         final = fish_surf if facing == 1 else pygame.transform.flip(fish_surf, True, False)
         surface.blit(final, final.get_rect(center=(int(x), int(y))))
 
@@ -1299,13 +1411,15 @@ def spawn_random_fish(fishes=[]):
 
     # 1. TOP DWELLERS (25% Total)
     if choice < 0.15:
-        # Hatchetfish (Schooling surface dwellers)
-        return Hatchetfish(sx, surface_zone)
+        # TigerBarb (Schooling surface dwellers)
+        return TigerBarb(sx, surface_zone)
     elif choice < 0.25:
         # Pearl Gourami (Elegant top-mid dwellers)
         return PearlGourami(sx, surface_zone + 40)
 
     # 2. MIDDLE DWELLERS & ACTIVE SWIMMERS (35% Total)
+    if choice < 0.10:  # 10% chance to spawn a Pleco
+        return Pleco(sx, SCREEN_HEIGHT - 60)
     elif choice < 0.40:
         # Neon Tetras (Small, high-density schoolers)
         return NeonTetra(sx, mid_zone)
@@ -1407,13 +1521,21 @@ while True:
             # Temporary string to store the log entries
             log_output = ""
 
+            fish_counts = {}
+
             for f in fishes:
+                fish_type = f.__class__.__name__
+                fish_counts[fish_type] = fish_counts.get(fish_type, 0) + 1
                 if f.hunger > 70:
                     status = "STARVING"
                     fish_type = f.__class__.__name__
                     fish_id = getattr(f, 'id', '???')
                     log_output += f"  > [{fish_type} #{fish_id}] Hunger: {f.hunger:.1f}%\n"
                     starving_count += 1
+
+            print("--- Current Tank Population ---")
+            for species, count in fish_counts.items():
+                print(f"{species}: {count}")
 
             # Only print the log header if there is actually someone starving
             if starving_count > 0:
@@ -1453,11 +1575,15 @@ while True:
             auto_feed_timer = random.randint(120, 420)
 
         for f in fishes[:]:
-            f.behavior(fishes)
+            if isinstance(f, Pleco):
+                f.behavior(fishes, algae)
+            else:
+                f.behavior(fishes)
+
             f.update(pellets, algae)
             if not f.alive:
-                fishes.remove(f)
-                fishes.append(spawn_random_fish(fishes))
+                    fishes.remove(f)
+                    fishes.append(spawn_random_fish(fishes))
 
         sorted_f = sorted(fishes, key=lambda f: f.z)
         for f in sorted_f:
@@ -1502,7 +1628,7 @@ while True:
                     try:
                         pygame.mixer.music.stop()
                         pygame.mixer.music.load(get_path(music_files[current_music_idx]))
-                        pygame.mixer.music.set_volume(0.4)
+                        pygame.mixer.music.set_volume(0.7)
                         pygame.mixer.music.play(-1)
                         print(f"Now playing: {music_files[current_music_idx]}")
                     except pygame.error:
