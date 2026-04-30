@@ -1285,21 +1285,21 @@ def spawn_random_fish(fishes=None):
 
     surface_zone = random.randint(WATER_TOP + 10, WATER_TOP + 60)
     mid_zone = random.randint(200, 500)
-    bottom_y = SCREEN_HEIGHT - 120
     floor_y = SCREEN_HEIGHT - 60
 
+    # Ensure this table is sorted by the chance value (ascending)
     spawn_table = [
-        (0.15, TigerBarb, surface_zone),
-        (0.25, PearlGourami, surface_zone + 40),
-        (0.25, Pleco, floor_y),
-        (0.55, NeonTetra, mid_zone),
-        (0.25, BoesemaniRainbow, mid_zone - 50),
-        (0.30, BalaShark, mid_zone),
-        (0.20, ClownLoach, floor_y - 20),
+        (0.10, TigerBarb, surface_zone),
+        (0.20, PearlGourami, surface_zone + 40),
+        (0.30, ClownLoach, floor_y - 20),
+        (0.40, BoesemaniRainbow, mid_zone - 50),
+        (0.50, BalaShark, mid_zone),
         (0.60, PeacockCichlid, mid_zone),
-        (1.70, YellowPrinceCichlid, mid_zone),
-        (1.80, IceBlueCichlid, mid_zone),
-        (1.00, Cichlid, mid_zone)
+        (0.70, YellowPrinceCichlid, mid_zone),
+        (0.80, IceBlueCichlid, mid_zone),
+        (0.85, Pleco, floor_y),
+        (0.90, NeonTetra, mid_zone),
+        (1.00, Cichlid, mid_zone)  # Changed to 1.0 to cover the full range
     ]
 
     choice = random.random()
@@ -1307,6 +1307,9 @@ def spawn_random_fish(fishes=None):
     for chance, fish_class, y_pos in spawn_table:
         if choice < chance:
             return fish_class(sx, y_pos)
+
+    # Fallback just in case choice is exactly 1.0 or table logic fails
+    return Cichlid(sx, mid_zone)
 
 pygame.display.set_caption("Pixel Aquarium")
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
