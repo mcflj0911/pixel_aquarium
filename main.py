@@ -12,7 +12,7 @@ SCREEN_WIDTH = info.current_w - 300
 SCREEN_HEIGHT = 600
 SAND_HEIGHT = 40
 WATER_TOP = 80
-ALGAE_SPAWN_RATE = 30
+ALGAE_SPAWN_RATE = 15
 MAX_HUNGER = 100
 
 CLR_WATER_TOP = (40, 100, 180)
@@ -36,7 +36,19 @@ LIGHT_MODES = [
     {"name": "ACTINIC",       "color": (0, 0, 255, 50)},
     {"name": "SUNSET GOLD",   "color": (255, 140, 0, 45)},
     {"name": "MILD GREEN",    "color": (150, 255, 180, 35)},
-    {"name": "RGB STROBE",    "color": (0, 0, 0, 0)}
+    {"name": "RGB STROBE",    "color": (0, 0, 0, 0)},
+    {"name": "BLACKWATER CREEK", "color": (70, 40, 10, 90)},  # Heavy tannins, high contrast
+    {"name": "MANGROVE SHADOW", "color": (120, 130, 80, 55)},  # Brackish, murky green-yellow
+    {"name": "ARCTIC CHILL", "color": (200, 230, 255, 35)},  # Crisp, pale icy blue
+    {"name": "SHALLOW REEF", "color": (0, 200, 255, 30)},  # High energy, vibrant tropical blue
+    {"name": "DAWN BREAK", "color": (255, 180, 150, 50)},  # Soft pink and peach tones
+    {"name": "HIGH NOON", "color": (255, 255, 240, 15)},  # Intense, direct white light
+    {"name": "TWILIGHT", "color": (60, 40, 100, 80)},  # Deep purple/blue transition
+    {"name": "MIDNIGHT ABYSS", "color": (5, 5, 25, 160)},  # Near total darkness, silhouette focus
+    {"name": "THUNDERSTORM", "color": (80, 80, 100, 100)},  # Gloomy, heavy grey
+    {"name": "BIOLUME", "color": (0, 255, 180, 45)},  # Radioactive/Ethereal glow
+    {"name": "VINTAGE SEPIA", "color": (150, 100, 50, 65)},  # Old-school film look
+    {"name": "NEON NIGHT", "color": (255, 20, 147, 40)}  # Cyberpunk hot pink overlay
 ]
 current_light_idx = 0
 light_notif_text = ""
@@ -416,34 +428,42 @@ class Fish:
             self.z_speed *= -1
 
         self.hunger += 0.05
+        # Ensure MAX_HUNGER is defined in your global scope
         if self.hunger >= MAX_HUNGER:
             self.hunger = MAX_HUNGER
             self.health -= 0.1
             if self.health <= 0:
                 self.alive = False
 
-        target_pos, is_alg = None, False
-        if self.hunger > 40:
-            if pellets:
-                target_pos = min(pellets, key=lambda p: self.pos.distance_to(p.pos)).pos
-            elif algae:
-                target_pos = pygame.Vector2(min(algae, key=lambda a: self.pos.distance_to(pygame.Vector2(a))))
-                is_alg = True
+        target_pos, target_ref, is_alg = None, None, False
 
+        if self.hunger > 40:
+            # Create a unified list of (Vector2, original_item, type_flag)
+            # This allows the fish to 'see' both food types as equal candidates
+            candidates = [(p.pos, p, False) for p in pellets] + \
+                         [(pygame.Vector2(a), a, True) for a in algae]
+
+            if candidates:
+                # Find the single closest item across both categories
+                target_pos, target_ref, is_alg = min(candidates, key=lambda c: self.pos.distance_to(c[0]))
+
+        # Movement and Eating Logic
         if target_pos and self.pos.distance_to(target_pos) < 250:
+            # Seek target
             self.apply_force((target_pos - self.pos).normalize() * 0.2)
+
+            # Consume target
             if self.pos.distance_to(target_pos) < 10:
                 self.hunger = max(0, self.hunger - (20 if is_alg else 60))
-                if not is_alg:
-                    for p in pellets:
-                        if p.pos == target_pos:
-                            pellets.remove(p)
-                            break
+
+                # Use the reference we stored to remove the item directly
+                if is_alg:
+                    algae.remove(target_ref)
                 else:
-                    for a in algae:
-                        if pygame.Vector2(a) == target_pos:
-                            algae.remove(a)
-                            break
+                    pellets.remove(target_ref)
+
+                print(f"{self.__class__, self.id} has Eaten {target_ref.__class__}")
+
 
         self.vel += self.acc
         if self.vel.length() > self.max_speed:
@@ -705,6 +725,75 @@ class NeonTetra(Fish):
                              (x - 26 * z * facing, y + 4 * z + t_sway)])
 
 
+class RummyNose(Fish):
+    def __init__(self, x, y):
+        # Rummy Noses prefer the lower half of the tank
+        super().__init__(x, random.randint(350, 500))
+
+    def behavior(self, fishes):
+        # Rummy Noses have a tighter schooling radius (closer together)
+        cohesion, alignment, separation, count = pygame.Vector2(0, 0), pygame.Vector2(0, 0), pygame.Vector2(0, 0), 0
+        for other in fishes:
+            if isinstance(other, RummyNose) and other != self:
+                dist = self.pos.distance_to(other.pos)
+                if dist < 100:  # Larger detection radius for tighter schooling
+                    cohesion += other.pos
+                    alignment += other.vel
+                    count += 1
+                    if dist < 20:  # Slightly tighter separation than Neons
+                        diff = self.pos - other.pos
+                        if diff.length() > 0:
+                            separation += diff.normalize() / dist
+
+        if count > 0:
+            # Stronger cohesion (0.05) to keep the school packed
+            self.apply_force(((cohesion / count) - self.pos) * 0.05 + (alignment / count) * 0.05 + (separation * 0.9))
+
+        # Vertical constraint: They stick closer to the bottom/sand area
+        target_y = SCREEN_HEIGHT - SAND_HEIGHT - 100
+        dy = self.pos.y - target_y
+        if abs(dy) > 50:
+            self.apply_force(pygame.Vector2(0, -dy * 0.003))
+
+        # Darting movement: Rummy noses are more energetic
+        if random.random() < 0.008:
+            self.apply_force(pygame.Vector2(random.uniform(-1, 1), random.uniform(-0.5, 0.5)) * 3.5)
+
+        # Avoid other species
+        for other in fishes:
+            if not isinstance(other, RummyNose) and self.pos.distance_to(other.pos) < 60:
+                self.apply_force((self.pos - other.pos).normalize() * 0.2)
+
+    def draw(self, surface):
+        self.draw_shadow(surface, 18)
+        facing, x, y, z = (1 if self.vel.x >= 0 else -1), self.pos.x, self.pos.y, self.z
+
+        # 1. Body: Sleek silver/translucent torpedo shape
+        pygame.draw.polygon(surface, self.get_depth_color((200, 205, 210)),
+                            [(x, y), (x - 10 * z * facing, y - 4 * z), (x - 24 * z * facing, y),
+                             (x - 10 * z * facing, y + 4 * z)])
+
+        # 2. THE RED NOSE: Iconic bright red head
+        pygame.draw.polygon(surface, (255, 20, 20),
+                            [(x, y), (x - 4 * z * facing, y - 2 * z), (x - 8 * z * facing, y),
+                             (x - 4 * z * facing, y + 2 * z)])
+
+        # 3. THE TAIL: Black and white striped pattern
+        t_sway = math.sin(pygame.time.get_ticks() * 0.02) * 3 * z  # Faster tail beat
+        tail_base = (x - 24 * z * facing, y)
+        tail_top = (x - 32 * z * facing, y - 6 * z + t_sway)
+        tail_bottom = (x - 32 * z * facing, y + 6 * z + t_sway)
+
+        # Base tail color (White)
+        pygame.draw.polygon(surface, (240, 240, 240), [tail_base, tail_top, tail_bottom])
+
+        # Black stripes on tail (Horizontal bars)
+        pygame.draw.line(surface, (0, 0, 0), tail_base, (x - 30 * z * facing, y + t_sway), int(2 * z))
+        pygame.draw.line(surface, (0, 0, 0), (x - 26 * z * facing, y - 2 * z),
+                         (x - 32 * z * facing, y - 4 * z + t_sway), int(1 * z))
+        pygame.draw.line(surface, (0, 0, 0), (x - 26 * z * facing, y + 2 * z),
+                         (x - 32 * z * facing, y + 4 * z + t_sway), int(1 * z))
+
 class Cichlid(Fish):
     def __init__(self, x, y):
         bottom_y = random.randint(SCREEN_HEIGHT - 120, SCREEN_HEIGHT - SAND_HEIGHT - 10)
@@ -743,6 +832,11 @@ class Cichlid(Fish):
             self.apply_force(pygame.Vector2(0, 0.15))
 
     def draw(self, surface):
+        pass
+
+class DemasoniCichlid(Cichlid):
+
+    def draw(self, surface):
         self.draw_shadow(surface, 26)
         facing, x, y, z = (1 if self.vel.x >= 0 else -1), self.pos.x, self.pos.y, self.z
         body_blue, dark_blue = self.get_depth_color((40, 120, 255)), self.get_depth_color((20, 40, 100))
@@ -765,6 +859,7 @@ class Cichlid(Fish):
                             [(x - 28 * z * facing, y + 2 * z), (x - 36 * z * facing, y - 2 * z + t_sway),
                              (x - 36 * z * facing, y + 14 * z + t_sway), (x - 28 * z * facing, y + 10 * z)])
         pygame.draw.circle(surface, (0, 0, 0), (int(x - 4 * z * facing), int(y + 4 * z)), int(2 * z))
+
 
 class YellowPrinceCichlid(Cichlid):
     def draw(self, surface):
@@ -1229,52 +1324,75 @@ class TigerBarb(Fish):
         self.vel.y *= 0.95
 
     def draw(self, surface):
-        self.draw_shadow(surface, 15)
+        self.draw_shadow(surface, 20)
         z, x, y = self.z, self.pos.x, self.pos.y
         facing = 1 if self.vel.x >= 0 else -1
 
-        surf_w, surf_h = int(120 * z), int(120 * z)
+        surf_w, surf_h = int(140 * z), int(160 * z)
         fish_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
         cx, cy = surf_w // 2, surf_h // 2
 
-        body_col = self.get_depth_color((230, 180, 50))
-        stripe_col = self.get_depth_color((15, 15, 15))
-        accent_col = self.get_depth_color((210, 40, 30))
-        t = pygame.time.get_ticks() * 0.01
+        body_col = self.get_depth_color((200, 190, 170))
+        stripe_col = self.get_depth_color((40, 35, 30))
+        fin_col = self.get_depth_color((180, 170, 150))
+        eye_col = (200, 0, 0)
 
+        t = pygame.time.get_ticks() * 0.005
+
+        # 1. DEFINE THE SHAPES (Vertices)
         body_pts = [
-            (cx + 45 * z, cy),
-            (cx + 10 * z, cy - 30 * z),
-            (cx - 30 * z, cy - 10 * z),
-            (cx - 30 * z, cy + 10 * z),
-            (cx + 10 * z, cy + 30 * z),
+            (cx + 40 * z, cy - 5 * z),  # Nose
+            (cx + 10 * z, cy - 45 * z),  # Top Peak
+            (cx - 30 * z, cy - 10 * z),  # Upper Tail Base
+            (cx - 30 * z, cy + 10 * z),  # Lower Tail Base
+            (cx + 10 * z, cy + 45 * z),  # Bottom Peak
         ]
+
+        dorsal_pts = [(cx + 10 * z, cy - 45 * z), (cx - 25 * z, cy - 75 * z), (cx - 15 * z, cy - 30 * z)]
+        anal_pts = [(cx + 10 * z, cy + 45 * z), (cx - 25 * z, cy + 75 * z), (cx - 15 * z, cy + 30 * z)]
+
+        # 2. DRAW BASE SILHOUETTE
+        pygame.draw.polygon(fish_surf, fin_col, dorsal_pts)
+        pygame.draw.polygon(fish_surf, fin_col, anal_pts)
         pygame.draw.polygon(fish_surf, body_col, body_pts)
 
-        stripe_offsets = [25, 8, -8, -22]
+        # 3. CLIPPED STRIPES (Perimeter-Aware)
+        mask_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
 
-        for sx in stripe_offsets:
-            dist_from_center = abs(sx) / 45.0
-            h_scale = 1.0 - (dist_from_center ** 2)
+        # Draw the "valid area" (the body and fins) in solid white
+        pygame.draw.polygon(mask_surf, (255, 255, 255), body_pts)
+        pygame.draw.polygon(mask_surf, (255, 255, 255), dorsal_pts)
+        pygame.draw.polygon(mask_surf, (255, 255, 255), anal_pts)
 
-            s_w = int(7 * z)
-            s_h = int(50 * z * h_scale)
+        # Use fill() instead of draw.rect() to support special_flags
+        stripe_x_positions = [28, 0, -25]
+        for sx in stripe_x_positions:
+            s_h = 150 * z
+            s_rect = pygame.Rect(int(cx + sx * z), int(cy - s_h // 2), int(6 * z), int(s_h))
 
-            s_rect = (int(cx + sx * z), int(cy - s_h // 2), s_w, s_h)
-            pygame.draw.rect(fish_surf, stripe_col, s_rect, border_radius=int(3 * z))
+            # .fill supports special_flags and the rect parameter
+            mask_surf.fill(stripe_col, rect=s_rect, special_flags=pygame.BLEND_RGBA_MIN)
 
-        pygame.draw.polygon(fish_surf, accent_col,
-                            [(cx + 5 * z, cy - 25 * z), (cx - 5 * z, cy - 45 * z), (cx - 15 * z, cy - 25 * z)])
+        # Blit the masked stripes onto the main fish surface
+        fish_surf.blit(mask_surf, (0, 0))
 
-        sway = math.sin(t) * 6 * z
-        tail_pts = [(cx - 30 * z, cy), (cx - 55 * z, cy - 28 * z + sway), (cx - 45 * z, cy + sway),
-                    (cx - 55 * z, cy + 28 * z + sway)]
-        pygame.draw.polygon(fish_surf, body_col, tail_pts)
-        pygame.draw.lines(fish_surf, accent_col, False, [tail_pts[1], tail_pts[0], tail_pts[3]], int(2 * z))
+        # 4. PERIMETER ACCENT LINES (Outline)
+        # Drawing lines using the exact same points ensures they stay on the perimeter
+        line_weight = max(1, int(1.5 * z))
+        pygame.draw.lines(fish_surf, stripe_col, True, body_pts, line_weight)
+        pygame.draw.lines(fish_surf, stripe_col, False, dorsal_pts, line_weight)
+        pygame.draw.lines(fish_surf, stripe_col, False, anal_pts, line_weight)
 
-        ex, ey = int(cx + 32 * z), int(cy - 3 * z)
-        pygame.draw.circle(fish_surf, (10, 10, 10), (ex, ey), int(5 * z))
-        pygame.draw.circle(fish_surf, (255, 255, 255, 150), (ex + 1, ey - 1), int(1.5 * z))
+        # 5. TAIL & EYE (As before)
+        tail_sway = math.sin(t * 1.5) * 8 * z
+        tail_pts = [(cx - 30 * z, cy - 10 * z), (cx - 60 * z, cy - 35 * z + tail_sway),
+                    (cx - 50 * z, cy + tail_sway), (cx - 60 * z, cy + 35 * z + tail_sway), (cx - 30 * z, cy + 10 * z)]
+        pygame.draw.polygon(fish_surf, fin_col, tail_pts)
+        pygame.draw.lines(fish_surf, stripe_col, True, tail_pts, line_weight)
+
+        ex, ey = int(cx + 28 * z), int(cy - 8 * z)
+        pygame.draw.circle(fish_surf, eye_col, (ex, ey), int(5 * z))
+        pygame.draw.circle(fish_surf, (10, 10, 10), (ex, ey), int(2.5 * z))
 
         final = fish_surf if facing == 1 else pygame.transform.flip(fish_surf, True, False)
         surface.blit(final, final.get_rect(center=(int(x), int(y))))
@@ -1286,30 +1404,63 @@ def spawn_random_fish(fishes=None):
     surface_zone = random.randint(WATER_TOP + 10, WATER_TOP + 60)
     mid_zone = random.randint(200, 500)
     floor_y = SCREEN_HEIGHT - 60
+    SURFACE = surface_zone
+    UPPER_MID = mid_zone - 60
+    MID = mid_zone
+    LOWER_MID = mid_zone + 60
+    FLOOR = floor_y - 20
 
     # Ensure this table is sorted by the chance value (ascending)
     spawn_table = [
-        (0.10, TigerBarb, surface_zone),
-        (0.20, PearlGourami, surface_zone + 40),
-        (0.30, ClownLoach, floor_y - 20),
-        (0.40, BoesemaniRainbow, mid_zone - 50),
-        (0.50, BalaShark, mid_zone),
-        (0.60, PeacockCichlid, mid_zone),
-        (0.70, YellowPrinceCichlid, mid_zone),
-        (0.80, IceBlueCichlid, mid_zone),
-        (0.85, Pleco, floor_y),
-        (0.90, NeonTetra, mid_zone),
-        (1.00, Cichlid, mid_zone)  # Changed to 1.0 to cover the full range
+        (0.30, PearlGourami, surface_zone + 40),
+        (0.75, NeonTetra, mid_zone - 30),
+        (0.90, RummyNose, mid_zone + 30),
+        (1.00, ClownLoach, floor_y - 20)
     ]
 
+    '''
+    SAMPLE SEEDS
+    No Cichlids or Plecos. The percentages are recalibrated so the remaining fish fill the probability gap up to 1.0.
+    spawn_seed1 = [
+    (0.08, TigerBarb, surface_zone),
+    (0.16, PearlGourami, surface_zone + 40),
+    (0.24, ClownLoach, floor_y - 20),
+    (0.32, BoesemaniRainbow, mid_zone - 50),
+    (0.40, BalaShark, mid_zone),
+    (0.50, PeacockCichlid, mid_zone),
+    (0.60, YellowPrinceCichlid, mid_zone),
+    (0.70, IceBlueCichlid, mid_zone),
+    (0.80, DemasoniCichlid, mid_zone),
+    (0.85, NeonTetra, mid_zone - 20),
+    (0.90, RummyNose, mid_zone + 20),
+    (1.00, Pleco, floor_y)
+    ]
+    Balanced distribution across all water columns including all species.    
+    spawn_seed2 = [
+        (0.15, TigerBarb, surface_zone),
+        (0.30, PearlGourami, surface_zone + 40),
+        (0.45, BoesemaniRainbow, mid_zone - 50),
+        (0.60, BalaShark, mid_zone),
+        (0.75, NeonTetra, mid_zone - 30),
+        (0.90, RummyNose, mid_zone + 30),
+        (1.00, ClownLoach, floor_y - 20)
+    ]
+    Exclusively Cichlids and Plecos. This mimics a rocky aquarium setup where Cichlids dominate the mid-water and bottom.
+    spawn_seed3 = [
+        (0.20, PeacockCichlid, mid_zone - 40),
+        (0.40, YellowPrinceCichlid, mid_zone),
+        (0.60, IceBlueCichlid, mid_zone + 40),
+        (0.80, DemasoniCichlid, mid_zone),
+        (1.00, Pleco, floor_y)
+    ]
+    '''
     choice = random.random()
-
     for chance, fish_class, y_pos in spawn_table:
         if choice < chance:
             return fish_class(sx, y_pos)
 
     # Fallback just in case choice is exactly 1.0 or table logic fails
-    return Cichlid(sx, mid_zone)
+    return DemasoniCichlid(sx, mid_zone)
 
 pygame.display.set_caption("Pixel Aquarium")
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
