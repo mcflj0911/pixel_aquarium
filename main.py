@@ -941,7 +941,7 @@ class IceBlueCichlid(Cichlid):
         self.base_color = (180, 230, 255)
         self.stripe_color = (70, 130, 180)
         self.fin_highlight = (255, 255, 255)
-        self.z = random.uniform(0.5, 0.9)
+        self.z = random.uniform(0.3, 0.6)
 
     def behavior(self, fishes):
         if random.random() < 0.01:
@@ -950,38 +950,70 @@ class IceBlueCichlid(Cichlid):
         self.vel *= 0.98
 
     def draw(self, surface):
-        self.draw_shadow(surface, 30)
+        self.draw_shadow(surface, 35)
         z, x, y = self.z, self.pos.x, self.pos.y
         facing = 1 if self.vel.x >= 0 else -1
 
-        body_col = self.get_depth_color(self.base_color)
-        bar_col = self.get_depth_color(self.stripe_color)
+        # Ice Blue Colors: Powder blue body, bright orange dorsal fin
+        body_col = self.get_depth_color((170, 210, 255))  # Icy Blue
+        dorsal_col = self.get_depth_color((255, 120, 30))  # Bright Orange/Red
+        stripe_col = self.get_depth_color((140, 180, 230))  # Subtle faint bars
+        egg_spot_col = (255, 200, 0)  # Yellow egg spots
 
-        body_width, body_height = 60 * z, 35 * z
-        body_rect = (x - body_width // 2, y - body_height // 2, body_width, body_height)
-        pygame.draw.ellipse(surface, body_col, body_rect)
+        body_width, body_height = 70 * z, 42 * z
 
-        for i in range(5):
-            bar_x = x - (20 * z) + (i * 10 * z)
-            bar_w = 4 * z
-            pygame.draw.rect(surface, bar_col, (bar_x, y - body_height // 2.5, bar_w, body_height * 0.8),
-                             border_radius=int(2 * z))
-
+        # 1. DORSAL FIN (Longer and more rectangular - classic Cichlid look)
         dorsal_pts = [
-            (x - 20 * z, y - body_height // 2),
-            (x + 15 * z, y - body_height // 2 - 10 * z),
-            (x + 25 * z, y - body_height // 4)
+            (x - 25 * z * facing, y - 15 * z),
+            (x + 15 * z * facing, y - 22 * z),
+            (x + 30 * z * facing, y - 10 * z),
+            (x + 5 * z * facing, y - 5 * z)
         ]
-        pygame.draw.polygon(surface, body_col, dorsal_pts)
-        pygame.draw.line(surface, self.fin_highlight, dorsal_pts[0], dorsal_pts[1], max(1, int(2 * z)))
+        pygame.draw.polygon(surface, dorsal_col, dorsal_pts)
+        # White edge highlight on dorsal
+        pygame.draw.lines(surface, (255, 255, 255), False, dorsal_pts[:3], max(1, int(1 * z)))
 
-        tail_rect = (x - 35 * z * facing, y - 12 * z, 15 * z, 24 * z)
-        pygame.draw.ellipse(surface, body_col, tail_rect)
+        # 2. BODY (Deep, robust shape with a steeper forehead)
+        # Using a polygon for a more "fishy" shape than a simple ellipse
+        body_shape = [
+            (x + 35 * z * facing, y),  # Nose
+            (x + 20 * z * facing, y - 18 * z),  # Forehead
+            (x - 15 * z * facing, y - 20 * z),  # Back
+            (x - 35 * z * facing, y),  # Tail base
+            (x - 15 * z * facing, y + 18 * z),  # Belly
+            (x + 20 * z * facing, y + 15 * z)  # Chin
+        ]
+        pygame.draw.polygon(surface, body_col, body_shape)
 
-        eye_x = x + (18 * z * facing)
+        # 3. FAINT BARS (Ice Blues have very subtle vertical banding)
+        for i in range(6):
+            bar_x = x - (20 * z * facing) + (i * 8 * z * facing)
+            pygame.draw.line(surface, stripe_col, (bar_x, y - 12 * z), (bar_x, y + 12 * z), max(1, int(3 * z)))
+
+        # 4. ANAL FIN with EGG SPOTS
+        anal_fin = [
+            (x - 10 * z * facing, y + 15 * z),
+            (x - 25 * z * facing, y + 25 * z),
+            (x - 30 * z * facing, y + 10 * z)
+        ]
+        pygame.draw.polygon(surface, body_col, anal_fin)
+        # The Egg Spots (Identity marker for African Cichlids)
+        pygame.draw.circle(surface, egg_spot_col, (int(x - 22 * z * facing), int(y + 18 * z)), int(2 * z))
+
+        # 5. TAIL FIN (Fan shaped)
+        tail_sway = math.sin(pygame.time.get_ticks() * 0.01) * 3 * z
+        tail_pts = [
+            (x - 35 * z * facing, y),
+            (x - 48 * z * facing, y - 18 * z + tail_sway),
+            (x - 48 * z * facing, y + 18 * z + tail_sway)
+        ]
+        pygame.draw.polygon(surface, body_col, tail_pts)
+
+        # 6. EYE (Low set, focused)
+        eye_x = x + (25 * z * facing)
         eye_y = y - (4 * z)
-        pygame.draw.circle(surface, (10, 10, 10), (int(eye_x), int(eye_y)), int(4 * z))
-        pygame.draw.circle(surface, (255, 255, 0), (int(eye_x), int(eye_y)), int(4 * z), 1)
+        pygame.draw.circle(surface, (10, 10, 10), (int(eye_x), int(eye_y)), int(3.5 * z))
+        pygame.draw.circle(surface, (255, 255, 255), (int(eye_x), int(eye_y)), int(3.5 * z), 1)
 
 class PearlGourami(Fish):
     def __init__(self, x, y):
@@ -1412,10 +1444,11 @@ def spawn_random_fish(fishes=None):
 
     # Ensure this table is sorted by the chance value (ascending)
     spawn_table = [
-        (0.30, PearlGourami, surface_zone + 40),
-        (0.75, NeonTetra, mid_zone - 30),
-        (0.90, RummyNose, mid_zone + 30),
-        (1.00, ClownLoach, floor_y - 20)
+        (0.20, PeacockCichlid, mid_zone - 40),
+        (0.40, YellowPrinceCichlid, mid_zone),
+        (0.60, IceBlueCichlid, mid_zone + 40),
+        (0.80, DemasoniCichlid, mid_zone),
+        (1.00, Pleco, floor_y)
     ]
 
     '''
