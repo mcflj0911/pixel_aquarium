@@ -1443,13 +1443,13 @@ def spawn_random_fish(fishes=None):
     FLOOR = floor_y - 20
 
     # Ensure this table is sorted by the chance value (ascending)
-    spawn_table = [
+    '''spawn_table = [
         (0.20, PeacockCichlid, mid_zone - 40),
         (0.40, YellowPrinceCichlid, mid_zone),
         (0.60, IceBlueCichlid, mid_zone + 40),
         (0.80, DemasoniCichlid, mid_zone),
         (1.00, Pleco, floor_y)
-    ]
+    ]'''
 
     '''
     SAMPLE SEEDS
@@ -1469,7 +1469,8 @@ def spawn_random_fish(fishes=None):
     (1.00, Pleco, floor_y)
     ]
     Balanced distribution across all water columns including all species.    
-    spawn_seed2 = [
+    '''
+    spawn_table = [
         (0.15, TigerBarb, surface_zone),
         (0.30, PearlGourami, surface_zone + 40),
         (0.45, BoesemaniRainbow, mid_zone - 50),
@@ -1478,6 +1479,7 @@ def spawn_random_fish(fishes=None):
         (0.90, RummyNose, mid_zone + 30),
         (1.00, ClownLoach, floor_y - 20)
     ]
+    '''
     Exclusively Cichlids and Plecos. This mimics a rocky aquarium setup where Cichlids dominate the mid-water and bottom.
     spawn_seed3 = [
         (0.20, PeacockCichlid, mid_zone - 40),
