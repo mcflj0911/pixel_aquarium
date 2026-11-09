@@ -1,0 +1,1210 @@
+{
+  "_help": "active_set picks which set of fish is stocked (cichlid_set, tetra_set, mixed_set, or any set you add under 'sets'). Each set maps a species class name to [share, smallest_group, largest_group]. max_fish caps the number of fish (lower it if the frame rate drops). Press R in game to reload this file. Species: DemasoniCichlid, YellowPrinceCichlid, CobaltZebra, RedZebra, KenyiCichlid, PeacockCichlid, AuratusCichlid, IceBlueCichlid, SocolofiCichlid, AngelFish, NeonTetra, RummyNose, CardinalTetra, EmberTetra, BlackSkirtTetra, LemonTetra, MosaicGuppy, TuxedoGuppy, SunsetGuppy, MoscowGuppy, Pleco, BalaShark, BoesemaniRainbow, PearlGourami, ClownLoach, TigerBarb Optional switches: predators, show_crayfish, show_turtle, show_visitors (frog and kingfisher guests) and new_tank (start with an uncycled tank for the nitrogen-cycle game), all false by default.",
+  "active_set": "tetra_set",
+  "max_fish": 45,
+  "sets": {
+    "cichlid_set": {
+      "DemasoniCichlid": [
+        9,
+        6,
+        9
+      ],
+      "YellowPrinceCichlid": [
+        4,
+        3,
+        4
+      ],
+      "CobaltZebra": [
+        3,
+        3,
+        3
+      ],
+      "RedZebra": [
+        3,
+        2,
+        3
+      ],
+      "KenyiCichlid": [
+        3,
+        2,
+        3
+      ],
+      "PeacockCichlid": [
+        3,
+        2,
+        3
+      ],
+      "AuratusCichlid": [
+        2,
+        2,
+        2
+      ],
+      "IceBlueCichlid": [
+        2,
+        2,
+        2
+      ],
+      "SocolofiCichlid": [
+        2,
+        2,
+        2
+      ],
+      "AngelFish": [
+        2,
+        2,
+        2
+      ]
+    },
+    "tetra_set": {
+      "NeonTetra": [
+        10,
+        8,
+        11
+      ],
+      "RummyNose": [
+        6,
+        5,
+        7
+      ],
+      "CardinalTetra": [
+        8,
+        6,
+        9
+      ],
+      "EmberTetra": [
+        9,
+        7,
+        10
+      ],
+      "BlackSkirtTetra": [
+        4,
+        3,
+        4
+      ],
+      "LemonTetra": [
+        5,
+        4,
+        5
+      ],
+      "MosaicGuppy": [
+        4,
+        3,
+        5
+      ],
+      "TuxedoGuppy": [
+        4,
+        3,
+        5
+      ],
+      "SunsetGuppy": [
+        4,
+        3,
+        5
+      ],
+      "MoscowGuppy": [
+        4,
+        3,
+        5
+      ],
+      "Corydoras": [
+        6,
+        4,
+        6
+      ],
+      "Otocinclus": [
+        5,
+        3,
+        5
+      ],
+      "BristlenosePleco": [
+        2,
+        1,
+        2
+      ],
+      "Killifish": [
+        4,
+        3,
+        5
+      ],
+      "Betta": [
+        1,
+        1,
+        1
+      ],
+      "Discus": [
+        2,
+        2,
+        2
+      ]
+    },
+    "mixed_set": {
+      "DemasoniCichlid": [
+        4,
+        3,
+        4
+      ],
+      "YellowPrinceCichlid": [
+        2,
+        2,
+        2
+      ],
+      "CobaltZebra": [
+        2,
+        2,
+        2
+      ],
+      "PeacockCichlid": [
+        2,
+        2,
+        2
+      ],
+      "AngelFish": [
+        2,
+        2,
+        2
+      ],
+      "NeonTetra": [
+        5,
+        4,
+        5
+      ],
+      "RummyNose": [
+        4,
+        3,
+        4
+      ],
+      "CardinalTetra": [
+        5,
+        4,
+        5
+      ],
+      "EmberTetra": [
+        4,
+        4,
+        4
+      ],
+      "BlackSkirtTetra": [
+        2,
+        2,
+        2
+      ],
+      "MosaicGuppy": [
+        3,
+        3,
+        3
+      ],
+      "SunsetGuppy": [
+        3,
+        3,
+        3
+      ],
+      "BalaShark": [
+        2,
+        2,
+        2
+      ],
+      "BoesemaniRainbow": [
+        3,
+        3,
+        3
+      ],
+      "TigerBarb": [
+        3,
+        3,
+        3
+      ],
+      "ClownLoach": [
+        3,
+        3,
+        3
+      ],
+      "Pleco": [
+        2,
+        1,
+        2
+      ],
+      "PearlGourami": [
+        2,
+        2,
+        2
+      ]
+    }
+  },
+  "quality": "HIGH",
+  "audio": {
+    "master": 1.0,
+    "effects": 1.0
+  },
+  "away_mode": true,
+  "show_crayfish": false,
+  "show_turtle": false,
+  "predators": false,
+  "show_visitors": false,
+  "new_tank": false,
+  "goals": [
+    "arrivals",
+    "away",
+    "blackout",
+    "bloom",
+    "book",
+    "boom",
+    "colony",
+    "crystal",
+    "dinner",
+    "director",
+    "first_fry",
+    "friends",
+    "lapse",
+    "lush",
+    "memorial",
+    "nest",
+    "nursery",
+    "photog",
+    "ribbon",
+    "rinse",
+    "scaper",
+    "shopper",
+    "showcase",
+    "shrimplets",
+    "storm",
+    "tourist",
+    "trim",
+    "wafer",
+    "week",
+    "wipe",
+    "worms"
+  ],
+  "strains": {
+    "SunsetGuppy|0|0": [
+      1,
+      0
+    ],
+    "MosaicGuppy|0|0": [
+      2,
+      4
+    ],
+    "MoscowGuppy|0|0": [
+      1,
+      0
+    ],
+    "MoscowGuppy|-1|0": [
+      2,
+      1
+    ],
+    "TuxedoGuppy|0|-1": [
+      1,
+      0
+    ],
+    "TuxedoGuppy|1|0": [
+      2,
+      1
+    ],
+    "MoscowGuppy|-1|-1": [
+      1,
+      0
+    ],
+    "SunsetGuppy|-1|-1": [
+      1,
+      0
+    ],
+    "MoscowGuppy|1|0": [
+      1,
+      0
+    ],
+    "MosaicGuppy|1|0": [
+      2,
+      1
+    ],
+    "SunsetGuppy|-1|0": [
+      1,
+      0
+    ],
+    "TuxedoGuppy|0|0": [
+      1,
+      0
+    ],
+    "TuxedoGuppy|-1|0": [
+      2,
+      1
+    ],
+    "MosaicGuppy|0|1": [
+      1,
+      0
+    ],
+    "SunsetGuppy|0|-1": [
+      1,
+      0
+    ],
+    "MosaicGuppy|-1|0": [
+      2,
+      2
+    ],
+    "MoscowGuppy|0|-1": [
+      1,
+      0
+    ],
+    "MosaicGuppy|1|-1": [
+      1,
+      0
+    ],
+    "SunsetGuppy|1|0": [
+      1,
+      0
+    ],
+    "MosaicGuppy|0|-1": [
+      2,
+      1
+    ],
+    "TuxedoGuppy|0|1": [
+      1,
+      0
+    ],
+    "Corydoras|0|0": [
+      2,
+      3
+    ]
+  },
+  "extra": {
+    "points": 1,
+    "owned": [
+      "filter",
+      "magnet",
+      "thermo"
+    ],
+    "memorial": [
+      {
+        "name": "Bubbles",
+        "cls": "Tuxedo Guppy",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Mourned Sunny"
+      },
+      {
+        "name": "Fern",
+        "cls": "Cardinal Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Joined the tank"
+      },
+      {
+        "name": "Pebble",
+        "cls": "Ember Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Mourned Gizmo"
+      },
+      {
+        "name": "Bubbles",
+        "cls": "Lemon Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Became friends with Fern"
+      },
+      {
+        "name": "Dot",
+        "cls": "Rummy Nose",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Became friends with Bubbles"
+      },
+      {
+        "name": "Pearl",
+        "cls": "Killifish",
+        "days": 4,
+        "cause": "old age",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Biscuit",
+        "cls": "Cardinal Tetra",
+        "days": 3,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Mourned Pearl"
+      },
+      {
+        "name": "Olive",
+        "cls": "Lemon Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Became friends with Biscuit"
+      },
+      {
+        "name": "Tango",
+        "cls": "Sunset Guppy",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Became friends with Fern"
+      },
+      {
+        "name": "Skye",
+        "cls": "Neon Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Tango"
+      },
+      {
+        "name": "Olive",
+        "cls": "Cardinal Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Became friends with Biscuit"
+      },
+      {
+        "name": "Fern",
+        "cls": "Lemon Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Mourned Bubbles"
+      },
+      {
+        "name": "Biscuit",
+        "cls": "Corydoras",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Became friends with Sunny"
+      },
+      {
+        "name": "Tango",
+        "cls": "Otocinclus",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Became friends with Fern"
+      },
+      {
+        "name": "Finn",
+        "cls": "Cardinal Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Became friends with Sunny"
+      },
+      {
+        "name": "Biscuit",
+        "cls": "Lemon Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Mourned Olive"
+      },
+      {
+        "name": "Lemon",
+        "cls": "Lemon Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Joined the tank"
+      },
+      {
+        "name": "Bubbles",
+        "cls": "Lemon Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Became friends with Marlo"
+      },
+      {
+        "name": "Olive",
+        "cls": "Neon Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Became friends with Pebble"
+      },
+      {
+        "name": "Fern",
+        "cls": "Sunset Guppy",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Mourned Tango"
+      },
+      {
+        "name": "Rusty",
+        "cls": "Black Skirt Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Became friends with Mochi"
+      },
+      {
+        "name": "Biscuit",
+        "cls": "Cardinal Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Mourned Olive"
+      },
+      {
+        "name": "Pearl",
+        "cls": "Killifish",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Became friends with Bubbles"
+      },
+      {
+        "name": "Marlo",
+        "cls": "Otocinclus",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Became friends with Fern"
+      },
+      {
+        "name": "Mochi",
+        "cls": "Black Skirt Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Olive"
+      },
+      {
+        "name": "Mochi",
+        "cls": "Cardinal Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Became friends with Sunny"
+      },
+      {
+        "name": "Waffles",
+        "cls": "Ember Tetra",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Became friends with Pearl"
+      },
+      {
+        "name": "Pebble",
+        "cls": "Neon Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Mourned Olive"
+      },
+      {
+        "name": "Marlo",
+        "cls": "Lemon Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Mourned Bubbles"
+      },
+      {
+        "name": "Pearl",
+        "cls": "Ember Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Mourned Waffles"
+      },
+      {
+        "name": "Kiwi",
+        "cls": "Mosaic Guppy",
+        "days": 1,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Became friends with Gizmo"
+      },
+      {
+        "name": "Olive",
+        "cls": "Neon Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Fern"
+      },
+      {
+        "name": "Sunny",
+        "cls": "Neon Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Nimbus"
+      },
+      {
+        "name": "Marlo",
+        "cls": "Ember Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Became friends with Finn"
+      },
+      {
+        "name": "Fern",
+        "cls": "Sunset Guppy",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Became friends with Pearl"
+      },
+      {
+        "name": "Waffles",
+        "cls": "Killifish",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Bubbles"
+      },
+      {
+        "name": "Waffles",
+        "cls": "Corydoras",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Became friends with Sunny"
+      },
+      {
+        "name": "Sunny",
+        "cls": "Cardinal Tetra",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Became friends with Sunny"
+      },
+      {
+        "name": "Poppy",
+        "cls": "Corydoras",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Dot",
+        "cls": "Rummy Nose",
+        "days": 4,
+        "cause": "old age",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Bubbles",
+        "cls": "Rummy Nose",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Became friends with Tango"
+      },
+      {
+        "name": "Marlo",
+        "cls": "Rummy Nose",
+        "days": 4,
+        "cause": "old age",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Mourned Dot"
+      },
+      {
+        "name": "Tango",
+        "cls": "Otocinclus",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Dot",
+        "cls": "Killifish",
+        "days": 4,
+        "cause": "old age",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Sunny",
+        "cls": "Killifish",
+        "days": 4,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Bubbles"
+      },
+      {
+        "name": "Sunny",
+        "cls": "Otocinclus",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Gizmo"
+      },
+      {
+        "name": "Tango",
+        "cls": "Bristlenose Pleco",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Bubbles",
+        "cls": "Killifish",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Fern"
+      },
+      {
+        "name": "Poppy",
+        "cls": "Rummy Nose",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Skye",
+        "cls": "Black Skirt Tetra",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Pebble",
+        "cls": "Corydoras",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Sunny",
+        "cls": "Corydoras",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Ripple",
+        "cls": "Otocinclus",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Tango",
+        "cls": "Bristlenose Pleco",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Skye",
+        "cls": "Black Skirt Tetra",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Ripple",
+        "cls": "Corydoras",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Mourned Ripple"
+      },
+      {
+        "name": "Bubbles",
+        "cls": "Killifish",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Gizmo"
+      },
+      {
+        "name": "Pebble",
+        "cls": "Corydoras",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Dot",
+        "cls": "Otocinclus",
+        "days": 4,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Gizmo"
+      },
+      {
+        "name": "Kiwi",
+        "cls": "Corydoras",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Sunny",
+        "cls": "Corydoras",
+        "days": 3,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Lemon",
+        "cls": "Killifish",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Mourned Bubbles"
+      },
+      {
+        "name": "Kiwi",
+        "cls": "Neon Tetra",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Ripple",
+        "cls": "Otocinclus",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Ripple",
+        "cls": "Corydoras",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Mourned Ripple"
+      },
+      {
+        "name": "Sunny",
+        "cls": "Corydoras",
+        "days": 2,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Tango",
+        "cls": "Bristlenose Pleco",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "explorer",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Pebble",
+        "cls": "Corydoras",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Waffles",
+        "cls": "Rummy Nose",
+        "days": 3,
+        "cause": "hunger",
+        "day": 42,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Bubbles",
+        "cls": "Killifish",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Fern"
+      },
+      {
+        "name": "Dot",
+        "cls": "Otocinclus",
+        "days": 4,
+        "cause": "old age",
+        "day": 42,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Nimbus"
+      },
+      {
+        "name": "Poppy",
+        "cls": "Rummy Nose",
+        "days": 3,
+        "cause": "old age",
+        "day": 42,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Kiwi",
+        "cls": "Corydoras",
+        "days": 3,
+        "cause": "old age",
+        "day": 43,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Pip",
+        "cls": "Rummy Nose",
+        "days": 3,
+        "cause": "old age",
+        "day": 43,
+        "persona": "greedy",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Kiwi",
+        "cls": "Rummy Nose",
+        "days": 3,
+        "cause": "illness",
+        "day": 43,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Fell ill: fin rot"
+      },
+      {
+        "name": "Ripple",
+        "cls": "Otocinclus",
+        "days": 4,
+        "cause": "old age",
+        "day": 43,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Skye",
+        "cls": "Black Skirt Tetra",
+        "days": 3,
+        "cause": "illness",
+        "day": 43,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Fell ill: fin rot"
+      },
+      {
+        "name": "Kiwi",
+        "cls": "Neon Tetra",
+        "days": 3,
+        "cause": "illness",
+        "day": 43,
+        "persona": "shy",
+        "gen": 1,
+        "note": "Fell ill: fin rot"
+      },
+      {
+        "name": "Finn",
+        "cls": "Sunset Guppy",
+        "days": 3,
+        "cause": "old age",
+        "day": 2,
+        "persona": "calm",
+        "gen": 1,
+        "note": "Grew old and slow"
+      },
+      {
+        "name": "Mochi",
+        "cls": "Corydoras",
+        "days": 3,
+        "cause": "old age",
+        "day": 2,
+        "persona": "bossy",
+        "gen": 1,
+        "note": "Fell out with Pebble"
+      }
+    ],
+    "reqs": 0,
+    "shows": 1,
+    "wins": 1,
+    "show_day": 40,
+    "scapes": 8,
+    "clips": 2,
+    "guests": 0,
+    "ferts": 2,
+    "sound": "AUTO",
+    "weeks": [],
+    "best_scape": 0,
+    "tours": 1,
+    "blooms": 4,
+    "sold": 0,
+    "streak": 0,
+    "chal": {},
+    "chal_won": [],
+    "raids": 0,
+    "relapses": 0,
+    "cash": 25,
+    "gear": [],
+    "line": {
+      "cls": "EmberTetra",
+      "target": -0.55,
+      "need": 2,
+      "done": 0
+    },
+    "fow": "Kiwi",
+    "tut": 0,
+    "tut_on": false,
+    "evok": 0,
+    "wx": true
+  },
+  "auto_quality": true
+}
