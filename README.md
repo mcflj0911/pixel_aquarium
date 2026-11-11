@@ -317,3 +317,60 @@ Press **Home** to put the fish, shrimp and snails away and design the tank. A to
 ### Live weather (real-time clock)
 
 With the real-time clock on (O), the tank copies the weather outside: rain and snow fall over the water, cloud dims the light, a real thunderstorm triggers the storm event, and the outdoor temperature nudges the tank temperature a little. The place comes from a single IP lookup (ipwho.is) and the weather from Open-Meteo, refreshed every 15 minutes on a background thread; with no network nothing changes. Hub > Life shows the current reading, and W there switches it off. Shift+D (or T in hub > Upkeep) trims every overgrown plant.
+
+### Cichlid set rework (Lake Malawi show tank)
+
+`cichlid_set` is now a peacock-and-hap showpiece tank: OB peacock, German red peacock, Sunshine peacock, red fin borleyi, electric blue hap (all new species, with colourful males and plain silvery females, stocked about 65% male) plus a Synodontis catfish and the bristlenose pleco as bottom cleaners. Switch to it with `"active_set": "cichlid_set"` in aquarium_config.json. The old mbuna species are still in the game and usable in custom sets.
+
+### Code layout and nursery start
+
+main.py is now a small loader: the game lives in ordered files under parts/ that run in one shared namespace (see the list at the top of main.py). Edit the part files, not main.py. `cichlid_set` starts as tiny fry that grow up in the tank (`FRY_START_SETS` in parts/07_fish_sets.py).
+
+### Aquascape per fish set
+
+aquarium_config.json has a `scapes` section: one entry per set name, every key optional. A set without an entry keeps the usual random layout (so existing saves and the tetra tank are unchanged). Keys: `layout` ("dual_anchor" = two tall rock pillars on the far flanks, a low arch in the middle, open front), `rock_style` (rock / smooth / river / lace), `pillar_height`, `arch`, `plants` (species, density, ground_cover, mounted), `substrate` (colour, buffer = aragonite holds KH and pH up), `water` (starting ph/kh/gh, tap kh/gh, the good KH/GH bands), `background` (darken, tint, ridge, doodads) and `light` (kelvin, shafts). `cichlid_set` ships with the Malawi design: lace-rock pillars, a stone arch, pale aragonite sand, pH about 8.2, a dark-blue back wall and 9000K light. The layout is built when a tank is created, so start a fresh tank after changing it; saved tanks keep the layout they were saved with only if the same set is active.
+
+### Turning and facing (semi-3D)
+
+Fish no longer flip instantly. When one reverses, it swings round through an end-on view: the side sprite narrows and fades into a front view (face, eyes, spread pectorals) or a back view (tail fan seen edge-on), then widens on the other side, in about a quarter of a second. Slow or idle fish also sometimes turn to face the glass for a few seconds, more often when the cursor is near, and shy, sleepy or frightened ones turn their back instead. The code is the "turning and facing" block at the top of parts/20_sprites_doodads.py (`TURN_RATE`, `GAZE_RATE`, `FRONT_W`). Predators, the eel and visitors still flip.
+
+### Wallpaper mode is safe (F10)
+
+F10 turns the tank into an unattended wallpaper, so while it is on nothing can hurt the fish: no power cuts, storms, channa visitors, predator raids, cold snaps, heat waves or leaf fall; no new illness (any sickness is cured), no starvation, no old-age or fry-eating deaths; the water stays clean, the glass stays clear and the stress, fear and hunger levels are held down. Only friendly events (current surge, daphnia bloom, new arrivals, moon spawning, rare visitors) still happen. The tank behaves normally again the moment you leave wallpaper mode (any key). The code is `unattended()` and `unattended_tick()` (parts/13_driver.py) plus the guards that call `unattended()`.
+
+### Start menu
+
+The game now opens on a menu instead of silently loading the last tank. Left/Right (or the < > buttons) cycle through the fish sets in aquarium_config.json, and the tank behind the menu becomes a fresh preview of that set (its sand, back wall and water values included). CONTINUE LAST TANK (Enter or C) loads the autosave, switching to the set it was saved with; NEW GAME (N) starts a fresh tank of the chosen set. The chosen set is remembered as `active_set`. The R key still restarts into this menu.
+
+### Cichlid cross-breeding and trait passing
+
+Different cichlid species can now pair and spawn (every cichlid except the angelfish). A fish prefers a mate of its own kind and only crosses when none is free, which is the usual case in `cichlid_set`, where each species starts as a few fry. Each fry of a mixed clutch is one parent's species and wears a blend of both parents' colours (body and fins, 25-75%), with the colour-line gene passed down as before. Hybrids are fertile: the blend is handed on, at full strength if both parents carry it and at 60% if only one does, so it fades back out over a few generations. The fish card shows "hybrid: 46% Kenyi Cichlid", and the blend is saved with the tank. Set `"cichlid_crossbreed": false` in aquarium_config.json to switch it off. The markings (bars, blotches) still come from the fry's own species. Code: `cross_traits`, `cichlid_cols` (parts/05_fish_cichlids.py), `find_mate` (15), `Eggs.hatch` (17).
+
+### Cichlid improvements (breeding, rank, looks)
+
+- **Stocking:** every species that starts with two or more fish gets at least one male and one female. A set can have its own fish budget: `"max_fish"` inside its `scapes` entry (`cichlid_set` uses 70).
+- **Rank and territory:** every couple of seconds `rank_tick()` (parts/05) ranks the adult males. The strongest quarter become dominant, each claiming a cave, nest or rock as a territory, and drive lesser males out of it. Shoving matches shift a male's rank (`contest`); the loser slinks away with drained colour and stress. A dominant male shows richer colour, and the fish card says "boss".
+- **Stocking and aggression:** a sparse tank focuses the aggression on the few fish present, a medium stocking is calmest, and an overcrowded tank gets nastier and stresses the cichlids (`CROWD`).
+- **Courtship:** a courting male raises his fins, blazes his colours and quivers in front of the female before leading her to the site.
+- **Mouthbrooding:** every cichlid except the angelfish is a mouthbrooder. The female takes the eggs into her mouth (her cheeks visibly bulge), moves slowly, cannot eat and stays out of fights for about 45 seconds, then releases the fry. If she dies first, the brood is lost.
+- **Hybrids:** a hybrid now also wears the other parent's markings, faintly. Two hybrids of the same cross breed true, and after three generations the line becomes a named, stable strain (a notification, a "(stable strain)" tag on the card and an entry in the saved `hybrids` record). A hybrid bred with a pure fish thins out.
+- **Looks:** fry are plain silvery-brown and colour up as they grow; stressed or beaten fish lose colour; the head-on and tail-on views of each species carry its markings (bars, stripe, blotches or a head glow).
+
+### Cichlid movement and behaviour: kicks, fin folding, digging, caves
+
+- **Burst-and-glide:** cichlids no longer cruise at a steady speed (`burst_glide` in parts/05). A quick kick of the tail, then a coast that loses speed. Kicks are lazy on patrol and hard when fleeing, chasing or lunging at a rival; hovering, sifting, digging, resting and brooding fish do not kick. The angelfish still glide smoothly.
+- **Fin folding:** `fold` (0..1) follows how hard the fish is swimming. While kicking or fleeing the dorsal, anal, pelvic and pectoral fins fold flat against the body and the tail fans wider; in the glide and at rest they open again, and a display flare overrides it. It is drawn in three cached steps (`self_fold`), so it costs no frame rate.
+- **Digging:** dominant males, and males with a mate, dig a spawning pit in the sand at their territory: down for a mouthful, a swim to the rim, a puff of sand where it is spat out. The pit gets deeper and the mound higher with each scoop (`PITS`, `draw_pits`), and fills in slowly if it is not kept up. He leads the female to his pit to spawn.
+- **Caves:** cichlids shelter in caves rather than behind any rock: at night, when frightened, and brooding females for the whole brood. A dominant male's cave is his own; others share a cave up to three fish and avoid a boss's. The cichlid scape now builds two caves between the pillars and the arch (`"caves": 2` in its `scapes` entry).
+
+### More cichlid behaviours
+
+- **Fry recall:** a brooding mother who hatched fry keeps watch for a while (`fry_t`); if she is scared, she sucks the fry back into her mouth (cheeks bulge again) and spits them out once it is calm.
+- **Lateral displays:** rivals can square up side by side with fins flared (`LATERAL`, `resolve_lateral`) and the bigger or higher-ranked one wins without a fight; mock fights show dark fighting bars on the flanks (`fighting`).
+- **Egg spots:** males of some species carry egg-spot dummies on the anal fin; more spots attract females and give a bigger clutch, and the trait is inherited (`egg_spots`).
+- **Sneaker males:** a small share of males are sneakers: pale and female-like, they drift near a spawning pair and can fertilise some of the eggs; the trait is inherited (`sneaker`, `sneaker_gene`).
+- **Feeding styles:** grazers peck rocks, sifters sift sand, pelagic species snap mid-water food, and some carry food away (`feed_w`, states `SNAP`, `CARRY`).
+- **Female choice:** females prefer dominant, richly coloured, egg-spotted males and reject others; males also reject poor mates (`find_mate`, `attract`).
+- **Sleeping postures:** at night fish rest in species-typical poses (head-down, tilted, wedged in a cave).
+- **Pebble moving:** digging males rearrange pebbles around their pit.
+- **Personalities:** each cichlid is explorer, shy, greedy, bossy or calm, which changes how far it roams, how fast it hides, how it feeds and how it fights.
